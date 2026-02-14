@@ -1,154 +1,98 @@
 # Genviral Skill
 
-An [OpenClaw](https://openclaw.ai) skill for automating content creation with the [Genviral](https://genviral.io) Partner API. Built for AI agents.
+An [OpenClaw](https://openclaw.ai) skill for the [Genviral](https://genviral.io) Partner API.
 
-Generate slideshows, manage image packs, post to TikTok/Instagram, track analytics, and run an autonomous content pipeline that learns and improves over time.
+It generates slideshows, posts them to TikTok/Instagram, tracks what performs, and adjusts its strategy based on real data. Every cycle makes the next one better.
 
-## What It Does
+## How It Works
 
-- **42+ CLI commands** wrapping every Partner API endpoint
-- **Full content pipeline**: generate slideshows from prompts, render to images, review, iterate, post
-- **Analytics**: track account performance, view post metrics, manage targets, get workspace suggestions
-- **Multi-platform**: TikTok, Instagram, any platform Genviral supports
-- **Self-improving**: built-in learning loop that tracks performance and optimizes strategy
-- **Agent-first**: SKILL.md is written for AI agents to read and immediately understand
+The skill runs a closed loop:
+
+1. **Generate** slideshows from a prompt + image pack
+2. **Review** each slide visually before anything gets posted
+3. **Post** to connected accounts (TikTok, Instagram, whatever Genviral supports)
+4. **Track** performance through analytics endpoints
+5. **Learn** what hooks, formats, and timing actually work
+6. **Adapt** strategy weights, retire underperformers, double down on winners
+
+It keeps a performance log, distills insights, and rewrites its own strategy over time. The longer it runs, the better it gets.
 
 ## Quick Start
 
 ```bash
-# 1. Set your API key
+# Set your API key
 export GENVIRAL_API_KEY="your_public_id.your_secret"
 
-# 2. List your connected accounts
+# See what accounts you have
 ./scripts/genviral.sh accounts
 
-# 3. List available image packs
-./scripts/genviral.sh list-packs
-
-# 4. Generate a slideshow
+# Generate a slideshow
 ./scripts/genviral.sh generate --prompt "5 morning habits that changed my life" --pack-id PACK_ID
 
-# 5. Render it
+# Render and post it
 ./scripts/genviral.sh render --id SLIDESHOW_ID
-
-# 6. Post it
 ./scripts/genviral.sh create-post --caption "Caption here" --media-type slideshow --media-urls "url1,url2,..." --accounts ACCOUNT_ID
 
-# 7. Check analytics
+# Check how it performed
 ./scripts/genviral.sh analytics-summary --range 30d
 ```
 
 ## Installation
 
-### OpenClaw
-
-Copy this skill into your OpenClaw skills directory:
-
-```bash
-cp -r genviral-skill /path/to/your/workspace/agent/skills/genviral
-```
-
-Or clone directly:
+Clone into your OpenClaw skills directory:
 
 ```bash
 cd /path/to/your/workspace/agent/skills
 git clone https://github.com/fdarkaou/genviral-skill.git genviral
 ```
 
-### Requirements
+Requires: `bash` 4+, `curl`, `jq`, and a [Genviral](https://genviral.io) account with Partner API access.
 
-- `bash` 4+
-- `curl`
-- `jq`
-- A [Genviral](https://genviral.io) account with Partner API access
-- An API key from [genviral.io](https://genviral.io) (API Keys page)
-
-## For AI Agents
-
-Read `SKILL.md`. It contains everything: command reference, content strategy, hook formulas, the self-improvement loop, platform best practices, and quality checklists.
-
-The skill is designed so an agent can:
-1. Read SKILL.md once
-2. Set up the product context files
-3. Start generating, posting, and iterating autonomously
-
-## File Structure
+## What's Inside
 
 ```
 genviral/
-  SKILL.md              # Complete agent instructions (start here)
-  README.md             # This file (human overview)
-  setup.md              # 3-step onboarding guide
-  config.yaml           # Configuration template
+  SKILL.md              # Full agent instructions (start here)
+  scripts/genviral.sh   # 42+ commands wrapping every API endpoint
+  config.yaml           # Configuration
+  setup.md              # 3-step onboarding
 
-  scripts/
-    genviral.sh         # CLI wrapper (42+ commands, all Partner API endpoints)
-
-  context/              # Product and brand context (agent-populated)
-    product.md          # What the product does, who it serves
-    brand-voice.md      # Tone, style, rules
-    niche-research.md   # Platform research
-
-  hooks/                # Hook system for content creation
-    formulas.md         # 5 hook formula patterns with psychology
-    library.json        # Hook instances (grows over time)
-
-  content/              # Content planning
-    scratchpad.md       # Ideas and drafts in progress
-    calendar.json       # Scheduled content plan
-
-  performance/          # Learning and optimization
-    log.json            # Post performance tracking
-    insights.md         # Distilled learnings
-    weekly-review.md    # Weekly review template
-
-  prompts/              # Prompt templates for API calls
-    slideshow.md        # 6 slideshow prompt templates
-    hooks.md            # Hook brainstorming prompts
+  context/              # Product and brand context (agent fills these in)
+  hooks/                # Hook formulas + growing library of tested hooks
+  content/              # Scratchpad, calendar, drafts
+  performance/          # Post log, insights, weekly reviews
+  prompts/              # Slideshow and hook prompt templates
 ```
 
 ## Commands
 
-| Category | Commands |
-|----------|----------|
-| **Accounts** | `accounts`, `upload`, `list-files` |
-| **Posts** | `create-post`, `update-post`, `retry-posts`, `list-posts`, `get-post`, `delete-posts` |
-| **Slideshows** | `generate`, `render`, `review`, `update`, `regenerate-slide`, `duplicate`, `delete`, `list-slideshows` |
-| **Packs** | `list-packs`, `get-pack`, `create-pack`, `update-pack`, `delete-pack`, `add-pack-image`, `delete-pack-image` |
-| **Templates** | `list-templates`, `get-template`, `create-template`, `update-template`, `delete-template`, `create-template-from-slideshow` |
-| **Analytics** | `analytics-summary`, `analytics-posts`, `analytics-targets`, `analytics-target-create`, `analytics-target`, `analytics-target-update`, `analytics-target-delete`, `analytics-target-refresh`, `analytics-refresh`, `analytics-workspace-suggestions` |
-| **Pipeline** | `full-pipeline`, `post-draft` |
+| Category | What |
+|----------|------|
+| **Accounts** | List connected accounts, upload files |
+| **Slideshows** | Generate, render, review, update, regenerate slides, duplicate, delete |
+| **Posts** | Create, update, retry failed, list, delete |
+| **Packs** | CRUD for image packs + image management |
+| **Templates** | CRUD for slideshow templates, convert from existing slideshows |
+| **Analytics** | Summary stats, post metrics, target management, refresh tracking, workspace suggestions |
 
-Run `genviral.sh help` for full usage.
+`genviral.sh help` for the full list.
 
-## The Learning Loop
+## The Self-Improving Part
 
-The skill tracks everything it posts and uses the data to improve:
+The skill doesn't just post content. It builds a feedback loop:
 
-1. **Generate** content using hook formulas and product context
-2. **Review** each slide visually before posting
-3. **Post** to target accounts
-4. **Track** performance via analytics endpoints and manual checks
-5. **Analyze** what worked and what didn't
-6. **Adapt** strategy weights, retire underperformers, double down on winners
+- **Hook formulas** have weights. High performers get used more, duds get retired.
+- **Performance log** tracks every post with 24h/48h/7d metrics.
+- **Weekly reviews** distill patterns into actionable insights.
+- **Strategy adapts** automatically based on what the data says.
 
-## API Coverage
-
-This skill wraps Genviral's Partner API v1 (`https://www.genviral.io/api/partner/v1`). Full endpoint coverage:
-
-- Accounts (GET)
-- File uploads (POST presigned + PUT)
-- Posts (CRUD + retry + bulk delete)
-- Slideshows (generate, render, update, regenerate slide, duplicate, delete, list)
-- Image packs (CRUD + image management)
-- Templates (CRUD + convert from slideshow)
-- Analytics (summary, posts, targets CRUD, refresh, workspace suggestions)
+Even without API analytics, the agent tracks its own output and learns from manual feedback. With analytics endpoints, it closes the loop entirely.
 
 ## Links
 
-- **Genviral**: [genviral.io](https://genviral.io)
-- **OpenClaw**: [openclaw.ai](https://openclaw.ai)
-- **Partner API docs**: [genviral.io/docs](https://genviral.io/docs)
+- [Genviral](https://genviral.io)
+- [OpenClaw](https://openclaw.ai)
+- [Partner API docs](https://genviral.io/docs)
 
 ## License
 
