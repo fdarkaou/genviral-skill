@@ -191,6 +191,12 @@ genviral.sh create-post \
   --is-your-brand false
 ```
 
+Boolean TikTok toggles support both forms:
+- `--tiktok-disable-comment` (sets `true`)
+- `--tiktok-disable-comment false` (explicit false)
+
+Same behavior applies to: `--tiktok-disable-duet`, `--tiktok-disable-stitch`, `--auto-add-music`, `--is-commercial`, `--is-branded-content`, `--user-consent`, `--is-your-brand`.
+
 TikTok `post_mode` options:
 - `DIRECT_POST` - publish immediately (default)
 - `MEDIA_UPLOAD` - save to TikTok drafts inbox (only supported for slideshow media)
@@ -205,6 +211,9 @@ TikTok `privacy_level` options:
 
 - Omit `--scheduled-at` or set it within 30 seconds of now: post is queued for immediate publish (status: `pending`)
 - Provide future ISO timestamp: post is scheduled (status: `scheduled`)
+- `--scheduled-at` must be ISO 8601 with timezone offset (example: `2026-02-14T19:47:00Z`)
+
+`--music-url` must point to a TikTok URL.
 
 **Multi-account posting:**
 
@@ -228,6 +237,11 @@ Clear operations:
 - Clear scheduled time: `--clear-scheduled-at`
 - Clear all TikTok settings: `--clear-tiktok`
 
+Validation notes:
+- `--scheduled-at` must be ISO 8601 with timezone offset (example: `2026-02-14T19:47:00Z`)
+- `--music-url` must be a TikTok URL (unless using `null` to clear)
+- TikTok boolean toggles support both flag form (`--auto-add-music`) and explicit values (`--auto-add-music false`)
+
 ### retry-posts
 Retry failed or partial posts.
 
@@ -250,6 +264,8 @@ genviral.sh list-posts --since "2025-02-01T00:00:00Z" --until "2025-02-28T23:59:
 genviral.sh list-posts --json
 ```
 
+`--since` and `--until` must be ISO 8601 datetimes with timezone offset.
+
 Status filters: `draft`, `pending`, `scheduled`, `posted`, `failed`, `partial`, `retry`
 
 ### get-post
@@ -264,7 +280,9 @@ Bulk delete posts by IDs.
 
 ```bash
 genviral.sh delete-posts --ids "post_id_1,post_id_2,post_id_3"
-# alias
+# equivalent option name
+genviral.sh delete-posts --post-ids "post_id_1,post_id_2,post_id_3"
+# command alias
 genviral.sh delete-post --ids "post_id_1,post_id_2"
 ```
 
@@ -383,6 +401,10 @@ Regenerate AI text for a single slide (0-indexed).
 genviral.sh regenerate-slide --id SLIDESHOW_ID --index 2
 genviral.sh regenerate-slide --id SLIDESHOW_ID --index 2 --instruction "Make this shorter and more punchy"
 ```
+
+Constraints:
+- `--index` must be a non-negative integer
+- `--instruction` max length: 500 characters
 
 ### duplicate | duplicate-slideshow
 Clone an existing slideshow as a new draft.
@@ -672,11 +694,12 @@ Returns:
 - `started_at`, `completed_at`
 - `error` (if failed)
 
-### analytics-workspace-suggestions
+### analytics-workspace-suggestions (alias: `get-analytics-workspace-suggestions`)
 List other workspace/personal scopes with tracked accounts.
 
 ```bash
 genviral.sh analytics-workspace-suggestions
+genviral.sh get-analytics-workspace-suggestions
 genviral.sh analytics-workspace-suggestions --json
 ```
 

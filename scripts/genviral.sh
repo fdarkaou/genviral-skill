@@ -65,7 +65,10 @@
 #   analytics-target-delete         Delete analytics target
 #   analytics-target-refresh        Refresh analytics target
 #   analytics-refresh               Get analytics refresh status
+#   get-analytics-refresh           Alias for analytics-refresh
 #   analytics-workspace-suggestions List workspace suggestions
+#   get-analytics-workspace-suggestions
+#                                  Alias for analytics-workspace-suggestions
 #
 # Pipeline:
 #   post-draft                      Post rendered slideshow as draft (legacy TikTok-focused)
@@ -380,6 +383,29 @@ validate_iso_date_ymd() {
     local value="$2"
 
     [[ "$value" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || die "--${option_name} must be YYYY-MM-DD. Got: $value"
+
+    local normalized
+    normalized="$(date -u -d "$value" '+%Y-%m-%d' 2>/dev/null || true)"
+    [[ "$normalized" == "$value" ]] || die "--${option_name} must be a valid calendar date (YYYY-MM-DD). Got: $value"
+}
+
+validate_iso_datetime_offset() {
+    local option_name="$1"
+    local value="$2"
+
+    [[ "$value" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$ ]] \
+        || die "--${option_name} must be ISO 8601 with timezone offset (e.g., 2026-02-14T19:47:00Z). Got: $value"
+
+    date -u -d "$value" '+%Y-%m-%dT%H:%M:%S%:z' >/dev/null 2>&1 \
+        || die "--${option_name} must be a valid ISO 8601 datetime. Got: $value"
+}
+
+validate_tiktok_music_url() {
+    local option_name="$1"
+    local value="$2"
+
+    [[ "$value" =~ ^https?:// ]] || die "--${option_name} must be a valid URL. Got: $value"
+    [[ "${value,,}" == *"tiktok.com"* ]] || die "--${option_name} must point to tiktok.com. Got: $value"
 }
 
 validate_uuid() {
@@ -514,8 +540,10 @@ ${BOLD}Analytics Commands:${NC}
   analytics-target-update         PATCH /analytics/targets/{id}
   analytics-target-delete         DELETE /analytics/targets/{id}
   analytics-target-refresh        POST /analytics/targets/{id}/refresh
-  analytics-refresh               GET /analytics/refreshes/{id}
-  analytics-workspace-suggestions GET /analytics/workspace-suggestions
+  analytics-refresh | get-analytics-refresh
+                                  GET /analytics/refreshes/{id}
+  analytics-workspace-suggestions | get-analytics-workspace-suggestions
+                                  GET /analytics/workspace-suggestions
 
 ${BOLD}Pipeline (Legacy):${NC}
   post-draft                      Post rendered slideshow as TikTok draft
@@ -744,11 +772,26 @@ cmd_create_post() {
                 tiktok_disable_stitch="$(parse_boolean_flag_or_value "tiktok-disable-stitch" "${2:-}")"
                 if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
                 ;;
-            --auto-add-music)         tiktok_auto_add_music="$2"; shift 2 ;;
-            --is-commercial)          tiktok_is_commercial="$2"; shift 2 ;;
-            --is-branded-content)     tiktok_is_branded_content="$2"; shift 2 ;;
-            --user-consent)           tiktok_user_consent="$2"; shift 2 ;;
-            --is-your-brand)          tiktok_is_your_brand="$2"; shift 2 ;;
+            --auto-add-music)
+                tiktok_auto_add_music="$(parse_boolean_flag_or_value "auto-add-music" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
+            --is-commercial)
+                tiktok_is_commercial="$(parse_boolean_flag_or_value "is-commercial" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
+            --is-branded-content)
+                tiktok_is_branded_content="$(parse_boolean_flag_or_value "is-branded-content" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
+            --user-consent)
+                tiktok_user_consent="$(parse_boolean_flag_or_value "user-consent" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
+            --is-your-brand)
+                tiktok_is_your_brand="$(parse_boolean_flag_or_value "is-your-brand" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
             *) die "Unknown option: $1" ;;
         esac
     done
@@ -763,6 +806,8 @@ cmd_create_post() {
     [[ -n "$tiktok_description" && ${#tiktok_description} -gt 2200 ]] && die "--tiktok-description max length is 2200 characters"
 
     validate_uuid_csv "accounts" "$accounts" 10
+    [[ -n "$scheduled_at" ]] && validate_iso_datetime_offset "scheduled-at" "$scheduled_at"
+    [[ -n "$music_url" ]] && validate_tiktok_music_url "music-url" "$music_url"
 
     [[ -n "$tiktok_disable_comment" ]] && validate_boolean "tiktok-disable-comment" "$tiktok_disable_comment"
     [[ -n "$tiktok_disable_duet" ]] && validate_boolean "tiktok-disable-duet" "$tiktok_disable_duet"
@@ -926,11 +971,26 @@ cmd_update_post() {
                 tiktok_disable_stitch="$(parse_boolean_flag_or_value "tiktok-disable-stitch" "${2:-}")"
                 if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
                 ;;
-            --auto-add-music)       tiktok_auto_add_music="$2"; shift 2 ;;
-            --is-commercial)        tiktok_is_commercial="$2"; shift 2 ;;
-            --is-branded-content)   tiktok_is_branded_content="$2"; shift 2 ;;
-            --user-consent)         tiktok_user_consent="$2"; shift 2 ;;
-            --is-your-brand)        tiktok_is_your_brand="$2"; shift 2 ;;
+            --auto-add-music)
+                tiktok_auto_add_music="$(parse_boolean_flag_or_value "auto-add-music" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
+            --is-commercial)
+                tiktok_is_commercial="$(parse_boolean_flag_or_value "is-commercial" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
+            --is-branded-content)
+                tiktok_is_branded_content="$(parse_boolean_flag_or_value "is-branded-content" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
+            --user-consent)
+                tiktok_user_consent="$(parse_boolean_flag_or_value "user-consent" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
+            --is-your-brand)
+                tiktok_is_your_brand="$(parse_boolean_flag_or_value "is-your-brand" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
             *) die "Unknown option: $1" ;;
         esac
     done
@@ -941,6 +1001,8 @@ cmd_update_post() {
     [[ -n "$external_id" && ${#external_id} -gt 128 ]] && die "--external-id max length is 128 characters"
     [[ -n "$tiktok_title" && ${#tiktok_title} -gt 150 ]] && die "--tiktok-title max length is 150 characters"
     [[ -n "$tiktok_description" && ${#tiktok_description} -gt 2200 ]] && die "--tiktok-description max length is 2200 characters"
+    [[ -n "$scheduled_at" ]] && validate_iso_datetime_offset "scheduled-at" "$scheduled_at"
+    [[ -n "$music_url" && "$music_url" != "null" ]] && validate_tiktok_music_url "music-url" "$music_url"
 
     [[ -n "$tiktok_disable_comment" ]] && validate_boolean "tiktok-disable-comment" "$tiktok_disable_comment"
     [[ -n "$tiktok_disable_duet" ]] && validate_boolean "tiktok-disable-duet" "$tiktok_disable_duet"
@@ -1936,6 +1998,11 @@ cmd_regenerate_slide() {
     require_arg "id" "$slideshow_id"
     require_arg "index" "$slide_index"
 
+    validate_nonnegative_int "index" "$slide_index"
+    if [[ -n "$instruction" ]]; then
+        ((${#instruction} <= 500)) || die "--instruction max length is 500 characters"
+    fi
+
     local payload='{}'
     [[ -n "$instruction" ]] && payload="$(printf '%s' "$payload" | jq --arg inst "$instruction" '. + {instruction: $inst}')"
 
@@ -2082,6 +2149,7 @@ cmd_post_draft() {
 
     [[ -n "$privacy_override" ]] && warn "--privacy is ignored for post-draft. Using SELF_ONLY."
     [[ -n "$post_mode_override" ]] && warn "--post-mode is ignored for post-draft. Using MEDIA_UPLOAD."
+    [[ -n "$scheduled_at" ]] && validate_iso_datetime_offset "scheduled-at" "$scheduled_at"
 
     # Fetch rendered image URLs from the slideshow
     info "Fetching rendered slideshow for posting..."
@@ -2177,6 +2245,8 @@ cmd_list_posts() {
 
     validate_positive_int "limit" "$limit"
     validate_max_int "limit" "$limit" 100
+    [[ -n "$since" ]] && validate_iso_datetime_offset "since" "$since"
+    [[ -n "$until" ]] && validate_iso_datetime_offset "until" "$until"
 
     local endpoint="/posts?limit=${limit}"
     [[ -n "$status_filter" ]] && endpoint="${endpoint}&status=${status_filter}"
@@ -2232,12 +2302,12 @@ cmd_delete_posts() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --ids) ids="$2"; shift 2 ;;
+            --ids|--post-ids|--postIds) ids="$2"; shift 2 ;;
             *) die "Unknown option: $1" ;;
         esac
     done
 
-    require_arg "ids" "$ids"
+    require_arg "ids (or --post-ids)" "$ids"
 
     validate_uuid_csv "ids" "$ids" 50
 
@@ -2895,7 +2965,8 @@ case "$COMMAND" in
     analytics-target-refresh)         check_auth; cmd_analytics_target_refresh "$@" ;;
     analytics-refresh|get-analytics-refresh)
                                       check_auth; cmd_analytics_refresh_get "$@" ;;
-    analytics-workspace-suggestions)  check_auth; cmd_analytics_workspace_suggestions "$@" ;;
+    analytics-workspace-suggestions|get-analytics-workspace-suggestions)
+                                      check_auth; cmd_analytics_workspace_suggestions "$@" ;;
 
     # Legacy Pipeline Commands
     post-draft)                       check_auth; cmd_post_draft "$@" ;;
