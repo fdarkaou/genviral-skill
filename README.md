@@ -2,7 +2,20 @@
 
 An [OpenClaw](https://openclaw.ai) skill for the [Genviral](https://genviral.io) Partner API.
 
-It generates slideshows, posts them to TikTok/Instagram, tracks what performs, and adjusts its strategy based on real data. Every cycle makes the next one better.
+It generates slideshows, posts them across 6 platforms, tracks what performs, and adjusts its strategy based on real data. Every cycle makes the next one better.
+
+## Supported Platforms
+
+| Platform | Posting | Analytics | Notes |
+|----------|---------|-----------|-------|
+| **TikTok** | Yes | Yes | Slideshow carousels, videos. BYO or hosted accounts. |
+| **Instagram** | Yes | Yes | Reels, stories, carousels, square/portrait/landscape posts. |
+| **YouTube** | Yes | Yes | Shorts and standard video uploads. |
+| **Facebook** | Yes | - | Posts, square posts, event covers. |
+| **Pinterest** | Yes | - | Standard pins, square pins. |
+| **LinkedIn** | Yes | - | Posts, square posts, company pages. |
+
+Analytics (performance tracking, post metrics, account insights) is available for TikTok, Instagram, and YouTube.
 
 ## How It Works
 
@@ -10,7 +23,7 @@ The skill runs a closed loop:
 
 1. **Generate** slideshows from a prompt + image pack
 2. **Review** each slide visually before anything gets posted
-3. **Post** to connected accounts (TikTok, Instagram, whatever Genviral supports)
+3. **Post** to connected accounts across any supported platform
 4. **Track** performance through analytics endpoints
 5. **Learn** what hooks, formats, and timing actually work
 6. **Adapt** strategy weights, retire underperformers, double down on winners
@@ -48,14 +61,27 @@ git clone https://github.com/fdarkaou/genviral-skill.git genviral
 
 Requires: `bash` 4+, `curl`, `jq`, and a [Genviral](https://genviral.io) account with Partner API access.
 
+## Automation
+
+The skill includes cron job definitions to run the full pipeline on autopilot. See **[cron-setup.md](cron-setup.md)** for:
+
+- Daily content generation (generate, render, review, post)
+- Daily performance checks (pull analytics, log metrics)
+- Weekly strategy reviews (analyze what worked, update hook weights, plan next week)
+
+With cron set up, the agent runs the entire content pipeline without manual intervention.
+
 ## What's Inside
 
 ```
 genviral/
   SKILL.md              # Full agent instructions (start here)
-  scripts/genviral.sh   # 42+ commands wrapping every API endpoint
-  config.yaml           # Configuration
+  README.md             # This file (human overview)
+  cron-setup.md         # Cron job setup for automation
   setup.md              # 3-step onboarding
+  config.yaml           # Configuration
+
+  scripts/genviral.sh   # 42+ commands wrapping every API endpoint
 
   context/              # Product and brand context (agent fills these in)
   hooks/                # Hook formulas + growing library of tested hooks
@@ -86,7 +112,7 @@ The skill doesn't just post content. It builds a feedback loop:
 - **Weekly reviews** distill patterns into actionable insights.
 - **Strategy adapts** automatically based on what the data says.
 
-Even without API analytics, the agent tracks its own output and learns from manual feedback. With analytics endpoints, it closes the loop entirely.
+With analytics endpoints enabled, the loop closes entirely. Without them, the agent still tracks its own output and learns from manual feedback.
 
 ## Links
 
