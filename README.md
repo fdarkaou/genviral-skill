@@ -1,14 +1,15 @@
-# genviral Skill
+# Genviral Skill
 
-An [OpenClaw](https://openclaw.ai) skill for automating content creation with the [genviral](https://genviral.io) Partner API. Built for AI agents.
+An [OpenClaw](https://openclaw.ai) skill for automating content creation with the [Genviral](https://genviral.io) Partner API. Built for AI agents.
 
-Generate slideshows, manage image packs, post to TikTok/Instagram, and run an autonomous content pipeline that learns and improves over time.
+Generate slideshows, manage image packs, post to TikTok/Instagram, track analytics, and run an autonomous content pipeline that learns and improves over time.
 
 ## What It Does
 
-- **32 CLI commands** wrapping every Partner API endpoint
+- **42+ CLI commands** wrapping every Partner API endpoint
 - **Full content pipeline**: generate slideshows from prompts, render to images, review, iterate, post
-- **Multi-platform**: TikTok, Instagram, any platform genviral supports
+- **Analytics**: track account performance, view post metrics, manage targets, get workspace suggestions
+- **Multi-platform**: TikTok, Instagram, any platform Genviral supports
 - **Self-improving**: built-in learning loop that tracks performance and optimizes strategy
 - **Agent-first**: SKILL.md is written for AI agents to read and immediately understand
 
@@ -32,6 +33,9 @@ export GENVIRAL_API_KEY="your_public_id.your_secret"
 
 # 6. Post it
 ./scripts/genviral.sh create-post --caption "Caption here" --media-type slideshow --media-urls "url1,url2,..." --accounts ACCOUNT_ID
+
+# 7. Check analytics
+./scripts/genviral.sh analytics-summary --range 30d
 ```
 
 ## Installation
@@ -56,8 +60,8 @@ git clone https://github.com/fdarkaou/genviral-skill.git genviral
 - `bash` 4+
 - `curl`
 - `jq`
-- A genviral account with Partner API access
-- An API key from https://www.genviral.io (API Keys page)
+- A [Genviral](https://genviral.io) account with Partner API access
+- An API key from [genviral.io](https://genviral.io) (API Keys page)
 
 ## For AI Agents
 
@@ -78,7 +82,7 @@ genviral/
   config.yaml           # Configuration template
 
   scripts/
-    genviral.sh         # CLI wrapper (32 commands, all Partner API endpoints)
+    genviral.sh         # CLI wrapper (42+ commands, all Partner API endpoints)
 
   context/              # Product and brand context (agent-populated)
     product.md          # What the product does, who it serves
@@ -112,6 +116,7 @@ genviral/
 | **Slideshows** | `generate`, `render`, `review`, `update`, `regenerate-slide`, `duplicate`, `delete`, `list-slideshows` |
 | **Packs** | `list-packs`, `get-pack`, `create-pack`, `update-pack`, `delete-pack`, `add-pack-image`, `delete-pack-image` |
 | **Templates** | `list-templates`, `get-template`, `create-template`, `update-template`, `delete-template`, `create-template-from-slideshow` |
+| **Analytics** | `analytics-summary`, `analytics-posts`, `analytics-targets`, `analytics-target-create`, `analytics-target`, `analytics-target-update`, `analytics-target-delete`, `analytics-target-refresh`, `analytics-refresh`, `analytics-workspace-suggestions` |
 | **Pipeline** | `full-pipeline`, `post-draft` |
 
 Run `genviral.sh help` for full usage.
@@ -123,15 +128,13 @@ The skill tracks everything it posts and uses the data to improve:
 1. **Generate** content using hook formulas and product context
 2. **Review** each slide visually before posting
 3. **Post** to target accounts
-4. **Track** performance at 24h, 48h, 7d intervals
+4. **Track** performance via analytics endpoints and manual checks
 5. **Analyze** what worked and what didn't
 6. **Adapt** strategy weights, retire underperformers, double down on winners
 
-Even without analytics API access, the agent tracks its own output and learns from manual feedback.
-
 ## API Coverage
 
-This skill wraps genviral's Partner API v1 (`https://www.genviral.io/api/partner/v1`). Full endpoint coverage:
+This skill wraps Genviral's Partner API v1 (`https://www.genviral.io/api/partner/v1`). Full endpoint coverage:
 
 - Accounts (GET)
 - File uploads (POST presigned + PUT)
@@ -139,6 +142,13 @@ This skill wraps genviral's Partner API v1 (`https://www.genviral.io/api/partner
 - Slideshows (generate, render, update, regenerate slide, duplicate, delete, list)
 - Image packs (CRUD + image management)
 - Templates (CRUD + convert from slideshow)
+- Analytics (summary, posts, targets CRUD, refresh, workspace suggestions)
+
+## Links
+
+- **Genviral**: [genviral.io](https://genviral.io)
+- **OpenClaw**: [openclaw.ai](https://openclaw.ai)
+- **Partner API docs**: [genviral.io/docs](https://genviral.io/docs)
 
 ## License
 
