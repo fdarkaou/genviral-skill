@@ -133,9 +133,12 @@ List files uploaded via the Partner API.
 ```bash
 genviral.sh list-files
 genviral.sh list-files --type video --limit 20 --offset 0
+genviral.sh list-files --type image --context ai-studio,media-upload
 genviral.sh list-files --context all  # include all contexts
 genviral.sh list-files --json
 ```
+
+`--type` accepts: `image` or `video`.
 
 ---
 
@@ -233,6 +236,10 @@ genviral.sh retry-posts --post-ids "post_id_1,post_id_2"
 genviral.sh retry-posts --post-ids "post_id_1" --account-ids "account_id_1"
 ```
 
+Limits:
+- `post_ids`: 1-20 IDs
+- `account_ids`: 1-10 IDs
+
 ### list-posts
 List posts with optional filters.
 
@@ -252,12 +259,16 @@ Get details for a specific post.
 genviral.sh get-post --id POST_ID
 ```
 
-### delete-posts
+### delete-posts (alias: `delete-post`)
 Bulk delete posts by IDs.
 
 ```bash
 genviral.sh delete-posts --ids "post_id_1,post_id_2,post_id_3"
+# alias
+genviral.sh delete-post --ids "post_id_1,post_id_2"
 ```
+
+Limit: up to 50 IDs per request.
 
 Returns structured delete results including:
 - `deletedIds`
@@ -424,6 +435,8 @@ Create a new pack.
 ```bash
 genviral.sh create-pack --name "My Pack"
 genviral.sh create-pack --name "Public Pack" --is-public
+# explicit boolean also supported
+genviral.sh create-pack --name "Private Pack" --is-public false
 ```
 
 ### update-pack
@@ -479,17 +492,27 @@ genviral.sh get-template --id TEMPLATE_ID
 ```
 
 ### create-template
-Create a template from a config file.
+Create a template from a validated template config object.
 
 ```bash
+# File input
 genviral.sh create-template \
   --name "My Template" \
   --description "Description" \
   --visibility private \
   --config-file template-config.json
+
+# Inline JSON input
+genviral.sh create-template \
+  --name "My Template" \
+  --visibility workspace \
+  --config-json '{"version":1,"structure":{"slides":[]},"content":{},"visuals":{}}'
 ```
 
-Config file must be valid JSON matching the template config v1 schema.
+Config must be valid JSON matching the template config v1 schema.
+Use exactly one of:
+- `--config-file <path>`
+- `--config-json '<json>'`
 
 ### update-template
 Update template fields.
@@ -498,8 +521,11 @@ Update template fields.
 genviral.sh update-template --id TEMPLATE_ID --name "New Name"
 genviral.sh update-template --id TEMPLATE_ID --visibility workspace
 genviral.sh update-template --id TEMPLATE_ID --config-file new-config.json
+genviral.sh update-template --id TEMPLATE_ID --config-json '{"version":1,"structure":{"slides":[]},"content":{},"visuals":{}}'
 genviral.sh update-template --id TEMPLATE_ID --clear-description
 ```
+
+Config input: use one of `--config-file` or `--config-json`.
 
 ### delete-template
 Delete a template.
@@ -517,8 +543,12 @@ genviral.sh create-template-from-slideshow \
   --name "Winning Format" \
   --description "Built from high-performing slideshow" \
   --visibility workspace \
-  --preserve-text true
+  --preserve-text
 ```
+
+`--preserve-text` supports both forms:
+- `--preserve-text` (sets true)
+- `--preserve-text true|false`
 
 ---
 
@@ -526,7 +556,7 @@ genviral.sh create-template-from-slideshow \
 
 Analytics endpoints provide KPIs, post metrics, and tracked account management.
 
-### analytics-summary
+### analytics-summary (alias: `get-analytics-summary`)
 Get analytics summary with KPIs, trends, and content mix.
 
 ```bash
@@ -552,7 +582,7 @@ Returns:
 - `postingStreak` - Consecutive posting days
 - `contentMix` - Posts by platform
 
-### analytics-posts
+### analytics-posts (alias: `list-analytics-posts`)
 List post-level analytics with sorting and pagination.
 
 ```bash
@@ -608,6 +638,7 @@ genviral.sh analytics-target-update --id TARGET_ID --display-name "New Name"
 genviral.sh analytics-target-update --id TARGET_ID --favorite true
 genviral.sh analytics-target-update --id TARGET_ID --clear-display-name
 genviral.sh analytics-target-update --id TARGET_ID --refresh-policy-json '{"freeDailyRefresh":true}'
+genviral.sh analytics-target-update --id TARGET_ID --clear-refresh-policy
 ```
 
 ### analytics-target-delete

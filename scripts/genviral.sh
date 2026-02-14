@@ -24,7 +24,7 @@
 #   retry-posts                     Retry failed/partial posts
 #   list-posts                      List posts
 #   get-post                        Get post details
-#   delete-posts                    Bulk delete posts
+#   delete-posts | delete-post      Bulk delete posts
 #
 # Slideshow Commands:
 #   generate | generate-slideshow   Generate slideshow
@@ -55,7 +55,9 @@
 #
 # Analytics Commands:
 #   analytics-summary               Get analytics summary
+#   get-analytics-summary           Alias for analytics-summary
 #   analytics-posts                 List analytics posts
+#   list-analytics-posts            Alias for analytics-posts
 #   analytics-targets               List analytics targets
 #   analytics-target-create         Create analytics target
 #   analytics-target                Get analytics target
@@ -350,6 +352,68 @@ validate_boolean() {
     esac
 }
 
+validate_positive_int() {
+    local option_name="$1"
+    local value="$2"
+
+    [[ "$value" =~ ^[0-9]+$ ]] || die "--${option_name} must be a positive integer. Got: $value"
+    (( value > 0 )) || die "--${option_name} must be greater than 0. Got: $value"
+}
+
+validate_nonnegative_int() {
+    local option_name="$1"
+    local value="$2"
+
+    [[ "$value" =~ ^[0-9]+$ ]] || die "--${option_name} must be a non-negative integer. Got: $value"
+}
+
+validate_max_int() {
+    local option_name="$1"
+    local value="$2"
+    local max="$3"
+
+    (( value <= max )) || die "--${option_name} must be <= ${max}. Got: $value"
+}
+
+validate_iso_date_ymd() {
+    local option_name="$1"
+    local value="$2"
+
+    [[ "$value" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || die "--${option_name} must be YYYY-MM-DD. Got: $value"
+}
+
+validate_uuid() {
+    local option_name="$1"
+    local value="$2"
+
+    [[ "$value" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] || die "--${option_name} must be a UUID. Got: $value"
+}
+
+split_csv_to_json_array() {
+    local csv="$1"
+    printf '%s' "$csv" | tr ',' '\n' | sed '/^[[:space:]]*$/d' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | jq -R . | jq -sc .
+}
+
+validate_uuid_csv() {
+    local option_name="$1"
+    local csv="$2"
+    local max_count="$3"
+
+    local -a ids=()
+    local -a raw=()
+    IFS=',' read -r -a raw <<< "$csv"
+
+    for id in "${raw[@]}"; do
+        id="$(printf '%s' "$id" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+        [[ -z "$id" ]] && continue
+        validate_uuid "$option_name" "$id"
+        ids+=("$id")
+    done
+
+    (( ${#ids[@]} > 0 )) || die "--${option_name} requires at least one ID"
+    (( ${#ids[@]} <= max_count )) || die "--${option_name} supports at most ${max_count} IDs (got ${#ids[@]})"
+}
+
 require_arg() {
     local name="$1"
     local value="$2"
@@ -410,7 +474,7 @@ ${BOLD}Post Commands:${NC}
   retry-posts                     Retry failed/partial posts
   list-posts                      List posts (optionally filter by status)
   get-post                        Get details for a specific post
-  delete-posts                    Bulk delete posts by IDs
+  delete-posts | delete-post      Bulk delete posts by IDs
 
 ${BOLD}Slideshow Commands:${NC}
   generate | generate-slideshow   Generate slideshow (AI/manual/mixed)
@@ -440,8 +504,10 @@ ${BOLD}Template Commands:${NC}
   create-template-from-slideshow  Convert slideshow to template
 
 ${BOLD}Analytics Commands:${NC}
-  analytics-summary               GET /analytics/summary
-  analytics-posts                 GET /analytics/summary/posts
+  analytics-summary | get-analytics-summary
+                                  GET /analytics/summary
+  analytics-posts | list-analytics-posts
+                                  GET /analytics/summary/posts
   analytics-targets               GET /analytics/targets
   analytics-target-create         POST /analytics/targets
   analytics-target                GET /analytics/targets/{id}
@@ -591,6 +657,17 @@ cmd_list_files() {
         esac
     done
 
+    validate_positive_int "limit" "$limit"
+    validate_max_int "limit" "$limit" 100
+    validate_nonnegative_int "offset" "$offset"
+
+    if [[ -n "$type" ]]; then
+        case "$type" in
+            image|video) ;;
+            *) die "--type must be one of: image, video. Got: $type" ;;
+        esac
+    fi
+
     local endpoint="/files?limit=${limit}&offset=${offset}"
     [[ -n "$type" ]] && endpoint="${endpoint}&type=${type}"
     [[ -n "$context" ]] && endpoint="${endpoint}&context=${context}"
@@ -680,6 +757,13 @@ cmd_create_post() {
     require_arg "media-type" "$media_type"
     require_arg "accounts" "$accounts"
 
+    ((${#caption} <= 500)) || die "--caption max length is 500 characters"
+    [[ -n "$external_id" && ${#external_id} -gt 128 ]] && die "--external-id max length is 128 characters"
+    [[ -n "$tiktok_title" && ${#tiktok_title} -gt 150 ]] && die "--tiktok-title max length is 150 characters"
+    [[ -n "$tiktok_description" && ${#tiktok_description} -gt 2200 ]] && die "--tiktok-description max length is 2200 characters"
+
+    validate_uuid_csv "accounts" "$accounts" 10
+
     [[ -n "$tiktok_disable_comment" ]] && validate_boolean "tiktok-disable-comment" "$tiktok_disable_comment"
     [[ -n "$tiktok_disable_duet" ]] && validate_boolean "tiktok-disable-duet" "$tiktok_disable_duet"
     [[ -n "$tiktok_disable_stitch" ]] && validate_boolean "tiktok-disable-stitch" "$tiktok_disable_stitch"
@@ -695,6 +779,20 @@ cmd_create_post() {
         *) die "media-type must be 'video' or 'slideshow', got: $media_type" ;;
     esac
 
+    if [[ -n "$tiktok_post_mode" ]]; then
+        case "$tiktok_post_mode" in
+            DIRECT_POST|MEDIA_UPLOAD) ;;
+            *) die "--tiktok-post-mode must be DIRECT_POST or MEDIA_UPLOAD. Got: $tiktok_post_mode" ;;
+        esac
+    fi
+
+    if [[ -n "$tiktok_privacy" ]]; then
+        case "$tiktok_privacy" in
+            PUBLIC_TO_EVERYONE|MUTUAL_FOLLOW_FRIENDS|FOLLOWER_OF_CREATOR|SELF_ONLY) ;;
+            *) die "--tiktok-privacy must be one of: PUBLIC_TO_EVERYONE, MUTUAL_FOLLOW_FRIENDS, FOLLOWER_OF_CREATOR, SELF_ONLY. Got: $tiktok_privacy" ;;
+        esac
+    fi
+
     if [[ "$tiktok_post_mode" == "MEDIA_UPLOAD" && "$media_type" != "slideshow" ]]; then
         die "TikTok MEDIA_UPLOAD is only supported when media-type is slideshow."
     fi
@@ -707,13 +805,18 @@ cmd_create_post() {
     else
         require_arg "media-urls" "$media_urls"
         local urls_array
-        urls_array="$(echo "$media_urls" | tr ',' '\n' | jq -R . | jq -sc .)"
+        urls_array="$(split_csv_to_json_array "$media_urls")"
+        local url_count
+        url_count="$(printf '%s' "$urls_array" | jq 'length')"
+        (( url_count >= 1 && url_count <= 35 )) || die "--media-urls must contain between 1 and 35 URLs (got $url_count)"
         media_obj="$(jq -n --arg type "$media_type" --argjson urls "$urls_array" '{type: $type, urls: $urls}')"
     fi
 
     # Build accounts array
+    local account_ids_array
+    account_ids_array="$(split_csv_to_json_array "$accounts")"
     local accounts_array
-    accounts_array="$(echo "$accounts" | tr ',' '\n' | jq -R . | jq -s 'map({id: .})')"
+    accounts_array="$(printf '%s' "$account_ids_array" | jq 'map({id: .})')"
 
     # Build payload
     local payload
@@ -834,6 +937,11 @@ cmd_update_post() {
 
     require_arg "id" "$post_id"
 
+    [[ -n "$caption" && ${#caption} -gt 500 ]] && die "--caption max length is 500 characters"
+    [[ -n "$external_id" && ${#external_id} -gt 128 ]] && die "--external-id max length is 128 characters"
+    [[ -n "$tiktok_title" && ${#tiktok_title} -gt 150 ]] && die "--tiktok-title max length is 150 characters"
+    [[ -n "$tiktok_description" && ${#tiktok_description} -gt 2200 ]] && die "--tiktok-description max length is 2200 characters"
+
     [[ -n "$tiktok_disable_comment" ]] && validate_boolean "tiktok-disable-comment" "$tiktok_disable_comment"
     [[ -n "$tiktok_disable_duet" ]] && validate_boolean "tiktok-disable-duet" "$tiktok_disable_duet"
     [[ -n "$tiktok_disable_stitch" ]] && validate_boolean "tiktok-disable-stitch" "$tiktok_disable_stitch"
@@ -849,6 +957,27 @@ cmd_update_post() {
 
     if [[ "$clear_tiktok" == true && ( -n "$tiktok_title" || -n "$tiktok_description" || -n "$tiktok_post_mode" || -n "$tiktok_privacy" || -n "$tiktok_disable_comment" || -n "$tiktok_disable_duet" || -n "$tiktok_disable_stitch" || -n "$tiktok_auto_add_music" || -n "$tiktok_is_commercial" || -n "$tiktok_is_branded_content" || -n "$tiktok_user_consent" || -n "$tiktok_is_your_brand" ) ]]; then
         die "Use either TikTok update options or --clear-tiktok, not both."
+    fi
+
+    if [[ -n "$tiktok_post_mode" ]]; then
+        case "$tiktok_post_mode" in
+            DIRECT_POST|MEDIA_UPLOAD) ;;
+            *) die "--tiktok-post-mode must be DIRECT_POST or MEDIA_UPLOAD. Got: $tiktok_post_mode" ;;
+        esac
+    fi
+
+    if [[ -n "$tiktok_privacy" ]]; then
+        case "$tiktok_privacy" in
+            PUBLIC_TO_EVERYONE|MUTUAL_FOLLOW_FRIENDS|FOLLOWER_OF_CREATOR|SELF_ONLY) ;;
+            *) die "--tiktok-privacy must be one of: PUBLIC_TO_EVERYONE, MUTUAL_FOLLOW_FRIENDS, FOLLOWER_OF_CREATOR, SELF_ONLY. Got: $tiktok_privacy" ;;
+        esac
+    fi
+
+    if [[ -n "$media_type" ]]; then
+        case "$media_type" in
+            video|slideshow) ;;
+            *) die "--media-type must be 'video' or 'slideshow'. Got: $media_type" ;;
+        esac
     fi
 
     if [[ "$tiktok_post_mode" == "MEDIA_UPLOAD" && -n "$media_type" && "$media_type" != "slideshow" ]]; then
@@ -882,7 +1011,10 @@ cmd_update_post() {
         else
             require_arg "media-urls" "$media_urls"
             local urls_array
-            urls_array="$(echo "$media_urls" | tr ',' '\n' | jq -R . | jq -sc .)"
+            urls_array="$(split_csv_to_json_array "$media_urls")"
+            local url_count
+            url_count="$(printf '%s' "$urls_array" | jq 'length')"
+            (( url_count >= 1 && url_count <= 35 )) || die "--media-urls must contain between 1 and 35 URLs (got $url_count)"
             media_obj="$(jq -n --arg type "$media_type" --argjson urls "$urls_array" '{type: $type, urls: $urls}')"
         fi
         payload="$(printf '%s' "$payload" | jq --argjson media "$media_obj" '. + {media: $media}')"
@@ -890,8 +1022,11 @@ cmd_update_post() {
 
     # Accounts update
     if [[ -n "$accounts" ]]; then
+        validate_uuid_csv "accounts" "$accounts" 10
+        local account_ids_array
+        account_ids_array="$(split_csv_to_json_array "$accounts")"
         local accounts_array
-        accounts_array="$(echo "$accounts" | tr ',' '\n' | jq -R . | jq -s 'map({id: .})')"
+        accounts_array="$(printf '%s' "$account_ids_array" | jq 'map({id: .})')"
         payload="$(printf '%s' "$payload" | jq --argjson accts "$accounts_array" '. + {accounts: $accts}')"
     fi
 
@@ -946,15 +1081,17 @@ cmd_retry_posts() {
 
     require_arg "post-ids" "$post_ids"
 
+    validate_uuid_csv "post-ids" "$post_ids" 20
     local post_ids_array
-    post_ids_array="$(echo "$post_ids" | tr ',' '\n' | jq -R . | jq -sc .)"
+    post_ids_array="$(split_csv_to_json_array "$post_ids")"
 
     local payload
     payload="$(jq -n --argjson ids "$post_ids_array" '{post_ids: $ids}')"
 
     if [[ -n "$account_ids" ]]; then
+        validate_uuid_csv "account-ids" "$account_ids" 10
         local account_ids_array
-        account_ids_array="$(echo "$account_ids" | tr ',' '\n' | jq -R . | jq -sc .)"
+        account_ids_array="$(split_csv_to_json_array "$account_ids")"
         payload="$(printf '%s' "$payload" | jq --argjson accts "$account_ids_array" '. + {account_ids: $accts}')"
     fi
 
@@ -992,6 +1129,9 @@ cmd_list_packs() {
     done
 
     validate_boolean "include-public" "$include_public"
+    validate_positive_int "limit" "$limit"
+    validate_max_int "limit" "$limit" 100
+    validate_nonnegative_int "offset" "$offset"
 
     local endpoint="/packs?limit=${limit}&offset=${offset}&include_public=${include_public}"
     [[ -n "$search" ]] && endpoint="${endpoint}&search=${search}"
@@ -1049,12 +1189,16 @@ cmd_create_pack() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --name)      name="$2"; shift 2 ;;
-            --is-public) is_public=true; shift ;;
+            --is-public)
+                is_public="$(parse_boolean_flag_or_value "is-public" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
             *) die "Unknown option: $1" ;;
         esac
     done
 
     require_arg "name" "$name"
+    ((${#name} <= 120)) || die "--name max length is 120 characters"
 
     local payload
     payload="$(jq -n --arg name "$name" --argjson pub "$is_public" '{name: $name, is_public: $pub}')"
@@ -1094,6 +1238,7 @@ cmd_update_pack() {
     require_arg "id" "$pack_id"
 
     [[ -n "$is_public" ]] && validate_boolean "is-public" "$is_public"
+    [[ -n "$name" && ${#name} -gt 120 ]] && die "--name max length is 120 characters"
 
     local payload='{}'
     [[ -n "$name" ]] && payload="$(printf '%s' "$payload" | jq --arg n "$name" '. + {name: $n}')"
@@ -1212,6 +1357,10 @@ cmd_list_templates() {
         esac
     done
 
+    validate_positive_int "limit" "$limit"
+    validate_max_int "limit" "$limit" 100
+    validate_nonnegative_int "offset" "$offset"
+
     local endpoint="/templates?limit=${limit}&offset=${offset}"
     [[ -n "$search" ]] && endpoint="${endpoint}&search=${search}"
 
@@ -1258,6 +1407,7 @@ cmd_create_template() {
     local description=""
     local visibility="private"
     local config_file=""
+    local config_json=""
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -1265,15 +1415,31 @@ cmd_create_template() {
             --description) description="$2"; shift 2 ;;
             --visibility)  visibility="$2"; shift 2 ;;
             --config-file) config_file="$2"; shift 2 ;;
+            --config-json) config_json="$2"; shift 2 ;;
             *) die "Unknown option: $1" ;;
         esac
     done
 
     require_arg "name" "$name"
-    require_arg "config-file" "$config_file"
+
+    [[ "$visibility" == "private" || "$visibility" == "workspace" ]] || die "--visibility must be private or workspace"
+    [[ ${#name} -le 100 ]] || die "--name max length is 100 characters"
+    [[ -n "$description" && ${#description} -gt 500 ]] && die "--description max length is 500 characters"
+
+    if [[ -n "$config_file" && -n "$config_json" ]]; then
+        die "Use either --config-file or --config-json, not both."
+    fi
+    if [[ -z "$config_file" && -z "$config_json" ]]; then
+        die "Provide --config-file or --config-json"
+    fi
 
     local config
-    config="$(read_json_file "$config_file")"
+    if [[ -n "$config_file" ]]; then
+        config="$(read_json_file "$config_file")"
+    else
+        validate_json_string "config JSON" "$config_json"
+        config="$config_json"
+    fi
 
     local payload
     payload="$(jq -n \
@@ -1310,6 +1476,7 @@ cmd_update_template() {
     local clear_description=false
     local visibility=""
     local config_file=""
+    local config_json=""
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -1319,6 +1486,7 @@ cmd_update_template() {
             --clear-description) clear_description=true; shift ;;
             --visibility)        visibility="$2"; shift 2 ;;
             --config-file)       config_file="$2"; shift 2 ;;
+            --config-json)       config_json="$2"; shift 2 ;;
             *) die "Unknown option: $1" ;;
         esac
     done
@@ -1328,6 +1496,14 @@ cmd_update_template() {
     if [[ "$clear_description" == true && -n "$description" ]]; then
         die "Use either --description or --clear-description, not both."
     fi
+
+    if [[ -n "$config_file" && -n "$config_json" ]]; then
+        die "Use either --config-file or --config-json, not both."
+    fi
+
+    [[ -z "$visibility" || "$visibility" == "private" || "$visibility" == "workspace" ]] || die "--visibility must be private or workspace"
+    [[ -z "$name" || ${#name} -le 100 ]] || die "--name max length is 100 characters"
+    [[ -z "$description" || ${#description} -le 500 ]] || die "--description max length is 500 characters"
 
     local payload='{}'
 
@@ -1339,14 +1515,19 @@ cmd_update_template() {
     fi
     [[ -n "$visibility" ]] && payload="$(printf '%s' "$payload" | jq --arg v "$visibility" '. + {visibility: $v}')"
 
-    if [[ -n "$config_file" ]]; then
+    if [[ -n "$config_file" || -n "$config_json" ]]; then
         local config
-        config="$(read_json_file "$config_file")"
+        if [[ -n "$config_file" ]]; then
+            config="$(read_json_file "$config_file")"
+        else
+            validate_json_string "config JSON" "$config_json"
+            config="$config_json"
+        fi
         payload="$(printf '%s' "$payload" | jq --argjson cfg "$config" '. + {config: $cfg}')"
     fi
 
     if [[ "$payload" == "{}" ]]; then
-        die "No fields provided for update. Use --name, --description, --clear-description, --visibility, or --config-file."
+        die "No fields provided for update. Use --name, --description, --clear-description, --visibility, --config-file, or --config-json."
     fi
 
     info "Updating template $template_id..."
@@ -1396,13 +1577,19 @@ cmd_create_template_from_slideshow() {
             --name)          name="$2"; shift 2 ;;
             --description)   description="$2"; shift 2 ;;
             --visibility)    visibility="$2"; shift 2 ;;
-            --preserve-text) preserve_text="$2"; shift 2 ;;
+            --preserve-text)
+                preserve_text="$(parse_boolean_flag_or_value "preserve-text" "${2:-}")"
+                if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
+                ;;
             *) die "Unknown option: $1" ;;
         esac
     done
 
     require_arg "slideshow-id" "$slideshow_id"
     validate_boolean "preserve-text" "$preserve_text"
+    [[ "$visibility" == "private" || "$visibility" == "workspace" ]] || die "--visibility must be private or workspace"
+    [[ -z "$name" || ${#name} -le 100 ]] || die "--name max length is 100 characters"
+    [[ -z "$description" || ${#description} -le 500 ]] || die "--description max length is 500 characters"
 
     local payload
     payload="$(jq -n \
@@ -1833,6 +2020,10 @@ cmd_list_slideshows() {
         esac
     done
 
+    validate_positive_int "limit" "$limit"
+    validate_max_int "limit" "$limit" 100
+    validate_nonnegative_int "offset" "$offset"
+
     local endpoint="/slideshows?limit=${limit}&offset=${offset}"
     [[ -n "$status_filter" ]] && endpoint="${endpoint}&status=${status_filter}"
     [[ -n "$search" ]] && endpoint="${endpoint}&search=${search}"
@@ -1916,8 +2107,11 @@ cmd_post_draft() {
     step "  Found $url_count rendered images"
 
     # Build accounts array
+    validate_uuid_csv "account-ids" "$account_ids" 10
+    local account_ids_array
+    account_ids_array="$(split_csv_to_json_array "$account_ids")"
     local accounts_array
-    accounts_array="$(echo "$account_ids" | tr ',' '\n' | jq -R . | jq -s 'map({id: .})')"
+    accounts_array="$(printf '%s' "$account_ids_array" | jq 'map({id: .})')"
 
     # Build post body
     local payload
@@ -1981,6 +2175,9 @@ cmd_list_posts() {
         esac
     done
 
+    validate_positive_int "limit" "$limit"
+    validate_max_int "limit" "$limit" 100
+
     local endpoint="/posts?limit=${limit}"
     [[ -n "$status_filter" ]] && endpoint="${endpoint}&status=${status_filter}"
     [[ -n "$since" ]] && endpoint="${endpoint}&since=${since}"
@@ -2042,9 +2239,11 @@ cmd_delete_posts() {
 
     require_arg "ids" "$ids"
 
+    validate_uuid_csv "ids" "$ids" 50
+
     # Convert comma-separated IDs to JSON array
     local post_ids_json
-    post_ids_json="$(echo "$ids" | tr ',' '\n' | jq -R . | jq -sc .)"
+    post_ids_json="$(split_csv_to_json_array "$ids")"
 
     warn "Deleting posts..."
 
@@ -2090,6 +2289,8 @@ cmd_analytics_summary() {
 
     if [[ -n "$start" || -n "$end" ]]; then
         [[ -n "$start" && -n "$end" ]] || die "Use --start and --end together."
+        validate_iso_date_ymd "start" "$start"
+        validate_iso_date_ymd "end" "$end"
     fi
 
     if [[ -n "$range" ]]; then
@@ -2160,6 +2361,8 @@ cmd_analytics_posts() {
 
     if [[ -n "$start" || -n "$end" ]]; then
         [[ -n "$start" && -n "$end" ]] || die "Use --start and --end together."
+        validate_iso_date_ymd "start" "$start"
+        validate_iso_date_ymd "end" "$end"
     fi
 
     if [[ -n "$range" ]]; then
@@ -2168,6 +2371,11 @@ cmd_analytics_posts() {
             *) die "--range must be one of: 14d, 30d, 90d, 1y, all. Got: $range" ;;
         esac
     fi
+
+    validate_positive_int "limit" "$limit"
+    validate_max_int "limit" "$limit" 100
+    validate_nonnegative_int "offset" "$offset"
+    validate_max_int "offset" "$offset" 10000
 
     if [[ -n "$sort_by" ]]; then
         case "$sort_by" in
@@ -2308,15 +2516,17 @@ cmd_analytics_target_update() {
     local favorite=""
     local refresh_policy_json=""
     local refresh_policy_file=""
+    local clear_refresh_policy=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --id)                 id="$2"; shift 2 ;;
             --display-name)       display_name="$2"; shift 2 ;;
             --clear-display-name) clear_display_name=true; shift ;;
-            --favorite)           favorite="$2"; shift 2 ;;
+            --favorite)            favorite="$2"; shift 2 ;;
             --refresh-policy-json) refresh_policy_json="$2"; shift 2 ;;
             --refresh-policy-file) refresh_policy_file="$2"; shift 2 ;;
+            --clear-refresh-policy) clear_refresh_policy=true; shift ;;
             *) die "Unknown option: $1" ;;
         esac
     done
@@ -2329,6 +2539,10 @@ cmd_analytics_target_update() {
 
     if [[ -n "$refresh_policy_json" && -n "$refresh_policy_file" ]]; then
         die "Use either --refresh-policy-json or --refresh-policy-file, not both."
+    fi
+
+    if [[ "$clear_refresh_policy" == true && ( -n "$refresh_policy_json" || -n "$refresh_policy_file" ) ]]; then
+        die "Use either --clear-refresh-policy or --refresh-policy-json/--refresh-policy-file, not both."
     fi
 
     [[ -n "$favorite" ]] && validate_boolean "favorite" "$favorite"
@@ -2347,10 +2561,14 @@ cmd_analytics_target_update() {
     fi
 
     [[ -n "$favorite" ]] && payload="$(printf '%s' "$payload" | jq --argjson v "$favorite" '. + {favorite: $v}')"
-    [[ -n "$refresh_policy_json" ]] && payload="$(printf '%s' "$payload" | jq --argjson v "$refresh_policy_json" '. + {refreshPolicy: $v}')"
+    if [[ "$clear_refresh_policy" == true ]]; then
+        payload="$(printf '%s' "$payload" | jq '. + {refreshPolicy: null}')"
+    elif [[ -n "$refresh_policy_json" ]]; then
+        payload="$(printf '%s' "$payload" | jq --argjson v "$refresh_policy_json" '. + {refreshPolicy: $v}')"
+    fi
 
     if [[ "$payload" == "{}" ]]; then
-        die "No updates provided. Use --display-name/--clear-display-name, --favorite, or --refresh-policy-json/--refresh-policy-file."
+        die "No updates provided. Use --display-name/--clear-display-name, --favorite, --clear-refresh-policy, or --refresh-policy-json/--refresh-policy-file."
     fi
 
     info "Updating analytics target $id..."
@@ -2634,7 +2852,7 @@ case "$COMMAND" in
     retry-posts)                      check_auth; cmd_retry_posts "$@" ;;
     list-posts)                       check_auth; cmd_list_posts "$@" ;;
     get-post)                         check_auth; cmd_get_post "$@" ;;
-    delete-posts)                     check_auth; cmd_delete_posts "$@" ;;
+    delete-posts|delete-post)         check_auth; cmd_delete_posts "$@" ;;
 
     # Slideshow Commands
     generate|generate-slideshow)      check_auth; cmd_generate "$@" ;;
@@ -2664,8 +2882,10 @@ case "$COMMAND" in
     create-template-from-slideshow)   check_auth; cmd_create_template_from_slideshow "$@" ;;
 
     # Analytics Commands
-    analytics-summary)                check_auth; cmd_analytics_summary "$@" ;;
-    analytics-posts)                  check_auth; cmd_analytics_posts "$@" ;;
+    analytics-summary|get-analytics-summary)
+                                      check_auth; cmd_analytics_summary "$@" ;;
+    analytics-posts|list-analytics-posts)
+                                      check_auth; cmd_analytics_posts "$@" ;;
     analytics-targets|analytics-targets-list)
                                       check_auth; cmd_analytics_targets "$@" ;;
     analytics-target-create)          check_auth; cmd_analytics_target_create "$@" ;;
