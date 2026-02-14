@@ -1,0 +1,3 @@
+# Environment / secrets
+.env
+*.key

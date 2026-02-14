@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "last_updated": null,
+  "description": "Hook library populated during setup. Each hook is specific to the configured product and niche.",
+  "hooks": []
+}

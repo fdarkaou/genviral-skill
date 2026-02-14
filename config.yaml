@@ -1,0 +1,91 @@
+# genviral Partner API - Multi-Platform Configuration
+# ==================================================
+# API key must be set via environment variable:
+#   export GENVIRAL_API_KEY="your_public_id.your_secret"
+# Or add to ~/.config/env/global.env
+# ==================================================
+
+genviral:
+  # Base URL for Partner API (note the www)
+  base_url: "https://www.genviral.io/api/partner/v1"
+
+content:
+  # Default image pack ID (run: genviral.sh list-packs)
+  default_pack_id: ""
+  # Number of slides per slideshow (6 is optimal for TikTok/Instagram)
+  default_slide_count: 6
+  # Aspect ratio: 9:16 (vertical), 4:5 (IG feed), 1:1 (square)
+  default_aspect_ratio: "9:16"
+  # Slideshow type: educational, personal
+  default_type: "educational"
+  # Text style preset: tiktok (white+shadow), inverted, shadow, white, black
+  default_style_preset: "tiktok"
+  # Language for AI generation
+  language: "en"
+  # Advanced text settings (null = auto/default)
+  advanced:
+    font_size: null
+    text_preset: null
+    text_width: null
+
+posting:
+  # Default account IDs (comma-separated, from: genviral.sh accounts)
+  # Can target multiple accounts per post (TikTok, Instagram, etc.)
+  default_account_ids: ""
+  # Default privacy level (PUBLIC_TO_EVERYONE, MUTUAL_FOLLOW_FRIENDS, FOLLOWER_OF_CREATOR, SELF_ONLY)
+  privacy_level: "PUBLIC_TO_EVERYONE"
+  # Default post mode (DIRECT_POST = publish immediately, MEDIA_UPLOAD = save to drafts)
+  post_mode: "DIRECT_POST"
+
+schedule:
+  # How many posts per day
+  posts_per_day: 2
+  # Target timezone for posting (used to calculate optimal times)
+  target_timezone: "America/New_York"
+  # Posting times in UTC (adjust for your audience)
+  posting_times:
+    - "14:00"
+    - "22:00"
+  # Days to post (0=Sun, 1=Mon, ... 6=Sat)
+  active_days: [0, 1, 2, 3, 4, 5, 6]
+
+hooks:
+  # Formula distribution for content mix (should sum to 100)
+  formula_weights:
+    person_conflict: 40
+    educational: 20
+    before_after: 15
+    pain_point: 15
+    pov_lifestyle: 10
+  # How many times a hook can be used before retirement
+  max_uses_per_hook: 3
+  # Minimum hooks to maintain in the active library
+  min_active_hooks: 20
+
+hashtags:
+  # Platform-specific hashtag pools
+  tiktok:
+    always: []
+    pool: []
+  instagram:
+    always: []
+    pool: []
+
+performance:
+  # Check metrics after these intervals (hours)
+  check_intervals_hours: [24, 48, 168]
+  # Thresholds for categorizing performance (24h views)
+  thresholds:
+    winner: 10000
+    solid: 1000
+    underperformer: 500
+
+http:
+  # Connection timeout in seconds
+  connect_timeout: 10
+  # Maximum request time in seconds
+  max_time: 120
+  # Number of retries on failure
+  retries: 2
+  # Delay between retries in seconds
+  retry_delay: 2

@@ -1,0 +1,4 @@
+{
+  "description": "Post performance tracking. Each entry records a posted draft with metrics at 24h, 48h, and 7d checkpoints.",
+  "posts": []
+}
