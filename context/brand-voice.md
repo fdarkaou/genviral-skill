@@ -1,29 +1,34 @@
-# Brand Voice Guide
+# Brand Voice: AnotherWrapper
 
-_This file is populated during setup. The agent reads it before writing any hooks or slide text._
+## Tone
+- Casual, developer-friendly, no corporate speak
+- Confident but not arrogant
+- Practical and results-oriented
+- Slightly irreverent (we know boilerplate setup sucks)
 
-## Voice Description
-[Overall tone: casual, professional, funny, authoritative, etc.]
+## Language Rules
+- Never use em-dashes
+- No AI-sounding phrases (delve, harness, landscape, leverage)
+- No tricolons ("Real X. Real Y. Real Z.")
+- No negation structures ("Not X. Not Y. [real thing]")
+- Vary sentence length aggressively
+- Sound like texting a developer friend, not writing a blog post
+- Use specific numbers and real examples
+- Take stances, don't hedge
 
-## Personality
-[If the brand were a person talking to a friend, what would they sound like?]
+## Content Themes
+1. **Ship faster**: Stop building infrastructure, start building products
+2. **AI coding era**: The boilerplate is built for vibe coding with AI assistants
+3. **Real results**: Show actual products people built with AnotherWrapper
+4. **Developer pain points**: Auth setup hell, payment integration nightmares, "just one more config file"
+5. **Indie hacker culture**: Building in public, shipping fast, MVPs over perfection
 
-## Do's
-- [Preferred words, phrases, and styles]
-- [How to address the audience]
-- [Energy level and humor approach]
+## Hashtags
+Primary: #nextjs #aitools #saas #indiehacker #webdev #coding
+Secondary: #typescript #startup #buildinpublic #developer #vibecoding
+Avoid: Overused generic tags like #technology #innovation
 
-## Don'ts
-- [Words and phrases to never use]
-- [Styles to avoid]
-- [Common mistakes to watch for]
-
-## Example Content (Reference)
-[Paste example content the user provided during setup]
-
-## Rules for All Generated Content
-- Never use em-dashes in any content
-- Keep language conversational and human
-- Each slide should be readable in under 3 seconds
-- Sound like a real person, not a brand or a robot
-- Avoid generic AI phrases ("harness the power of", "revolutionize", "game-changer")
+## CTA Style
+- Direct: "Link in bio" or "Check anotherwrapper.com"
+- Never salesy or pushy
+- Let the content sell itself
