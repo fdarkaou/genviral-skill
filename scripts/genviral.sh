@@ -1208,14 +1208,16 @@ cmd_list_packs() {
         return
     fi
 
-    local count
+    local count private_count public_count
     count="$(printf '%s' "$response" | jq '.data.packs | length // 0')"
-    ok "Found $count packs"
+    private_count="$(printf '%s' "$response" | jq '[.data.packs // [] | .[] | select(.is_public == false)] | length')"
+    public_count="$(printf '%s' "$response" | jq '[.data.packs // [] | .[] | select(.is_public == true)] | length')"
+    ok "Found $count packs (yours: $private_count | community: $public_count)"
     echo ""
 
     printf '%s' "$response" | jq -r '
         .data.packs // [] | .[] |
-        "  \(.id)\n    Name: \(.name // "unnamed")\n    Images: \(.image_count // 0)\n    Public: \(.is_public)\n"
+        "  \(.id)\n    Name: \(.name // "unnamed")\n    Images: \(.image_count // 0)\n    Type: \(if .is_public then "community" else "yours" end)\n"
     '
 }
 
@@ -2227,7 +2229,7 @@ cmd_post_draft() {
 # ---------------------------------------------------------------------------
 cmd_list_posts() {
     local status_filter=""
-    local limit=20
+    local limit=50
     local since=""
     local until=""
     local json_output=false
@@ -2267,9 +2269,18 @@ cmd_list_posts() {
     count="$(printf '%s' "$response" | jq '.data.posts | length // 0')"
     local total
     total="$(printf '%s' "$response" | jq '.data.summary.total // 0')"
-    ok "Found $count posts (total: $total)"
 
-    printf '%s' "$response" | jq '.data // {}'
+    # Print summary header
+    local posted scheduled failed pending
+    posted="$(printf '%s' "$response" | jq '.data.summary.by_status.posted // 0')"
+    scheduled="$(printf '%s' "$response" | jq '.data.summary.by_status.scheduled // 0')"
+    failed="$(printf '%s' "$response" | jq '.data.summary.by_status.failed // 0')"
+    pending="$(printf '%s' "$response" | jq '.data.summary.by_status.pending // 0')"
+    ok "Found $count posts (total: $total) | posted: $posted | scheduled: $scheduled | failed: $failed | pending: $pending"
+    echo ""
+
+    # Print compact post list
+    printf '%s' "$response" | jq -r '.data.posts[] | "  \(.id)\n    Status: \(.status) | Media: \(.media.type // "unknown") | Scheduled: \(.scheduled_at // "none")\n    Caption: \(.caption[:100] // "no caption")...\n"'
 }
 
 # ---------------------------------------------------------------------------
