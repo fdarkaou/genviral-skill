@@ -118,7 +118,7 @@ With analytics endpoints enabled, the loop closes entirely. Without them, the ag
 
 - [Genviral](https://genviral.io)
 - [OpenClaw](https://openclaw.ai)
-- [Partner API docs](https://genviral.io/docs)
+- [Partner API docs](https://docs.genviral.io)
 
 ## License
 
