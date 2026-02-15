@@ -759,7 +759,9 @@ This is the recommended workflow for producing posts.
 
 7. **Post:** Use `create-post` with media-type slideshow, or use legacy `post-draft` for TikTok drafts.
 
-8. **Track Performance:** Use analytics endpoints to monitor metrics.
+8. **Log the Post (MANDATORY):** Immediately after posting, append an entry to `content/post-log.md` with: date, time (UTC), post ID, type (slideshow/video), hook/caption snippet, status (posted/scheduled/draft), and which pack was used. This is the single source of truth for all content output. If the file doesn't exist, create it with the header format. Never skip this step.
+
+9. **Track Performance:** Use analytics endpoints to monitor metrics. During performance checks (evening cron), update `content/post-log.md` with view/like/comment counts for recent posts.
 
 ### For Video Posts
 
