@@ -1,14 +1,16 @@
-# genviral Partner API - AnotherWrapper Configuration
+# genviral Partner API Configuration
 # ==================================================
-# API key set via: GENVIRAL_API_KEY in ~/.config/env/global.env
+# API key set via: GENVIRAL_API_KEY environment variable
+# Run `genviral.sh list-accounts` to find your account IDs
+# Run `genviral.sh list-packs` to find your pack IDs
 # ==================================================
 
 genviral:
   base_url: "https://www.genviral.io/api/partner/v1"
 
 content:
-  # AnotherWrapper Dev pack (10 coding/tech images)
-  default_pack_id: "67987d66-46e8-4d24-bd6d-5d0759222142"
+  # Your default image pack ID (run list-packs to find it)
+  default_pack_id: ""
   default_slide_count: 5
   default_aspect_ratio: "9:16"
   default_type: "educational"
@@ -20,8 +22,8 @@ content:
     text_width: null
 
 posting:
-  # @anotherwrapper TikTok account
-  default_account_ids: "87dab214-20dd-4aa1-806d-d5bf1419d517"
+  # Your default account ID (run list-accounts to find it)
+  default_account_ids: ""
   privacy_level: "PUBLIC_TO_EVERYONE"
   post_mode: "DIRECT_POST"
 
@@ -44,8 +46,8 @@ hooks:
 
 hashtags:
   tiktok:
-    always: ["#nextjs", "#aitools", "#webdev"]
-    pool: ["#saas", "#indiehacker", "#coding", "#typescript", "#startup", "#buildinpublic", "#developer", "#vibecoding", "#boilerplate"]
+    always: []
+    pool: []
 
 performance:
   check_intervals_hours: [24, 48, 168]
