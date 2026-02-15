@@ -755,7 +755,7 @@ This is the recommended workflow for producing posts.
 
 5. **Render:** Run `render` to generate final images.
 
-6. **Visual Review:** Check rendered images for text readability, contrast, no overflow.
+6. **Visual Review (MANDATORY):** Before posting, visually inspect EVERY rendered slide using an image analysis tool. Check: (a) background images are relevant to the topic and product, (b) text is readable and not obscured by busy backgrounds, (c) no text overflow or clipping, (d) overall quality is something you'd actually want posted. If any slide fails, regenerate it or swap the image. Never post without reviewing.
 
 7. **Post:** Use `create-post` with media-type slideshow, or use legacy `post-draft` for TikTok drafts.
 
