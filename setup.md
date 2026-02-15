@@ -1,80 +1,115 @@
-# Quick Setup Guide
+# Setup Guide
 
-Get up and running with genviral in 3 steps. This skill works for TikTok, Instagram, or any platform genviral supports.
+This guide is for agents helping users get started with Genviral. Read this during onboarding and walk your human through it conversationally.
 
-## Step 1: Set Your API Key
+## What to Tell Your Human First
 
-Get your API key from https://www.genviral.io (API Keys page), then set it:
+Before anything else, explain:
+
+> Everything you do through this skill (posts, slideshows, image packs, scheduled content) shows up in the Genviral dashboard at genviral.io. You can always see, edit, or manage things in the UI. The agent and the dashboard are two views of the same system.
+
+This is important. People worry about agents doing things they can't see or control. Reassure them.
+
+## Step 1: API Key
+
+Get your API key from https://www.genviral.io (Settings > API Keys), then set it:
 
 ```bash
 export GENVIRAL_API_KEY="your_public_id.your_secret"
 ```
 
-Or add it to `~/.config/env/global.env` to persist across sessions.
+Add it to your environment file to persist across sessions.
 
-## Step 2: Find Your Accounts
+**Test it works:**
+```bash
+genviral.sh accounts
+```
 
-List all your connected accounts (BYO + hosted):
+If this returns your connected accounts, you're good.
+
+## Step 2: Pick Your Account(s)
+
+List all connected accounts:
 
 ```bash
 genviral.sh accounts
 ```
 
-Copy the account IDs you want to use. You can target multiple accounts per post.
+Ask your human which account(s) they want to post to. Could be one, could be several. Set the IDs in `config.yaml`:
 
-## Step 3: Pick a Default Image Pack
+```yaml
+posting:
+  default_account_ids: "ACCOUNT_ID_1"  # comma-separated for multiple
+```
 
-List available image packs:
+## Step 3: Images (Let the User Decide)
 
+This is where it gets flexible. **Do NOT hardcode a default pack.** Instead, explain the options:
+
+### Option A: Use an existing image pack
 ```bash
 genviral.sh list-packs
 ```
+Show them what's available (their own packs + community packs). If they like one, great. Set it in config or pass it per-slideshow.
 
-Pick one that fits your niche and copy its ID.
+### Option B: Create a new pack
+Ask what kind of images fit their brand. Then either:
+- Help them upload images: `genviral.sh create-pack --name "My Pack"` then `genviral.sh add-pack-image --pack-id X --url "https://..."`
+- Suggest they create one in the Genviral UI (drag and drop is easier for bulk uploads)
 
-## Configure Defaults
+### Option C: Generate images per post
+The agent can generate images (via OpenAI, etc.) for each slideshow instead of pulling from a pack. No pack needed. More variety, but costs per image and less visual consistency.
 
-Edit `config.yaml` and set:
+### Option D: Mix and match
+Use a pack for some posts, generate fresh images for others. The agent can decide based on the content.
 
-```yaml
-content:
-  default_pack_id: "PASTE_PACK_ID_HERE"
+**The key message:** Packs are a convenience, not a requirement. The agent can work with or without them.
 
-posting:
-  default_account_ids: "ACCOUNT_ID_1,ACCOUNT_ID_2"  # comma-separated
-```
+## Step 4: Product Context (Optional but Recommended)
 
-Save the file.
+Ask your human about their product. Fill in `context/product.md` together:
+- What's the product?
+- Who's it for?
+- What are the key features?
+- What's the website?
 
-## Test It
+Then fill in `context/brand-voice.md`:
+- How should content sound? (casual, professional, witty?)
+- Any words or phrases to avoid?
+- Example captions they like?
 
-Run a quick test:
+These files make the agent's content way more relevant. But they're optional. The agent can start posting with just an account and some images.
+
+## Step 5: First Post
+
+Walk them through creating their first slideshow:
 
 ```bash
-genviral.sh generate --prompt "Test slideshow: 3 productivity tips" --pack-id YOUR_PACK_ID
+genviral.sh generate --prompt "Your prompt here"
+genviral.sh render --slideshow-id SLIDESHOW_ID
+genviral.sh create-post --caption "your caption" --media-type slideshow --slideshow-id SLIDESHOW_ID --accounts ACCOUNT_ID
 ```
 
-If you get a slideshow ID back, you are ready to go!
+Or use the full pipeline command if they want it all in one go.
+
+**Remind them:** For TikTok, posting as a draft lets them add trending music before publishing. That's often the best workflow.
 
 ## What's Next?
 
-Now you can:
+Once they're posting, the agent can:
+- Set up a daily content cron (see `cron-setup.md`)
+- Track performance via analytics
+- Build a hook library based on what works
+- Run weekly strategy reviews
 
-- **Create video posts:** `genviral.sh create-post --caption "..." --media-type video --media-url "https://..." --accounts "id1,id2"`
-- **Create slideshow posts:** Generate a slideshow, render it, then post it
-- **Upload files:** `genviral.sh upload --file video.mp4 --content-type video/mp4`
-- **Full pipeline:** `genviral.sh full-pipeline --prompt "..." --caption "..."`
+The skill self-improves over time. The more it posts and tracks, the better it gets at picking hooks and timing.
 
-For TikTok/Instagram strategy, hook formulas, and content planning, read `SKILL.md`.
+## Onboarding Tone
 
-## Optional: Product Context & Hooks
+Be helpful, not overwhelming. Don't dump all 42 commands on them. Start with:
+1. "Let's get your API key set up"
+2. "Which account do you want to post to?"
+3. "Do you have images ready, or want me to help with that?"
+4. "Let's make your first post together"
 
-The agent can help you create product context files and hook libraries for automated content creation. Just ask!
-
-Files the agent can create for you:
-- `context/product.md` - Your product description and value props
-- `context/brand-voice.md` - Your tone and style guide
-- `hooks/library.json` - Pre-generated hook library for your niche
-- `content/calendar.json` - Planned content schedule
-
-These are optional but make ongoing content creation way easier.
+That's it. Everything else comes naturally as they use the skill.

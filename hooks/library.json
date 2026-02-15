@@ -1,143 +1,20 @@
 {
-  "version": 2,
-  "last_updated": "2026-02-15",
-  "description": "Hook library with performance-based weights. Updated weekly.",
   "hooks": [
     {
-      "id": "h001",
-      "formula": "pain_point",
-      "text": "trusting yourself beats chasing approval every time",
-      "theme": "self-trust / identity",
-      "weight": 1.0,
-      "status": "proven",
-      "like_rate": 12.8,
-      "source_date": "2026-02-10",
-      "notes": "Top performer this week. Emotional directness + identity framing."
-    },
-    {
-      "id": "h002",
-      "formula": "pain_point",
-      "text": "hit rock bottom? here's what self-respect really looks like",
-      "theme": "self-worth / vulnerability",
-      "weight": 0.95,
-      "status": "proven",
-      "like_rate": 11.8,
-      "source_date": "2026-02-09",
-      "notes": "Vulnerability hook. 'Rock bottom' creates instant emotional recognition."
-    },
-    {
-      "id": "h003",
-      "formula": "educational",
-      "text": "6 small habits that rebuilt my self-worth when i felt lost",
-      "theme": "self-worth / habits",
-      "weight": 0.9,
-      "status": "proven",
-      "like_rate": 11.4,
-      "source_date": "2026-02-15",
-      "notes": "Listicle format elevated by emotional anchor ('when i felt lost')."
-    },
-    {
-      "id": "h004",
-      "formula": "pain_point",
-      "text": "overthinking kills momentum. here's 5 real ways i flipped the script",
-      "theme": "overthinking / action",
-      "weight": 0.9,
-      "status": "proven",
-      "like_rate": 12.3,
-      "source_date": "2026-02-07",
-      "notes": "From prior week. Specific problem + promise of solution."
-    },
-    {
-      "id": "h005",
-      "formula": "pain_point",
-      "text": "feeling overwhelmed? here's how i stay mentally strong when life hits hard",
-      "theme": "mental strength / resilience",
-      "weight": 0.85,
-      "status": "proven",
-      "like_rate": 14.0,
-      "source_date": "2026-02-06",
-      "notes": "Highest like rate in 14d dataset. Question hook + empathy."
-    },
-    {
-      "id": "h006",
-      "formula": "educational",
-      "text": "discipline isn't a switch you flip. it's a grind",
-      "theme": "discipline / realism",
-      "weight": 0.8,
-      "status": "proven",
-      "like_rate": 10.6,
-      "source_date": "2026-02-14",
-      "notes": "Contrarian framing. Sets realistic expectation."
-    },
-    {
-      "id": "h007",
-      "formula": "before_after",
-      "text": "embracing failure changed my whole mindset. here's how i flipped the script",
-      "theme": "failure / transformation",
-      "weight": 0.8,
-      "status": "proven",
-      "like_rate": 11.6,
-      "source_date": "2026-02-08",
-      "notes": "Transformation arc. Failure-to-growth narrative."
-    },
-    {
-      "id": "h008",
-      "formula": "pain_point_to_aspirational",
-      "text": "everyone thinks building AI apps is about the code. actually, the real battle is fighting auth and payments for days",
-      "theme": "developer pain / AnotherWrapper",
-      "weight": 0.7,
-      "status": "new",
-      "like_rate": null,
-      "source_date": "2026-02-15",
-      "notes": "First automated AnotherWrapper product post. Awaiting metrics."
-    },
-    {
-      "id": "h009",
-      "formula": "educational",
-      "text": "5 daily habits that hit different",
-      "theme": "generic habits",
-      "weight": 0.2,
-      "status": "underperformer",
-      "like_rate": 2.2,
-      "source_date": "2026-02-13",
-      "notes": "Too vague. No emotional anchor. Generic listicle."
-    },
-    {
-      "id": "h010",
-      "formula": "educational",
-      "text": "5 real ways to keep your goals alive when life gets tough",
-      "theme": "goals / persistence",
-      "weight": 0.2,
-      "status": "underperformer",
-      "like_rate": 1.8,
-      "source_date": "2026-02-05",
-      "notes": "Generic advice without specific emotional situation."
+      "_comment": "Example hook entry. Add your own hooks here or let the agent generate them.",
+      "id": "example-1",
+      "text": "your hook text here",
+      "type": "pain_point",
+      "theme": "your niche",
+      "uses": 0,
+      "avg_views": 0,
+      "status": "fresh"
     }
   ],
-  "retired": [
-    {
-      "id": "r001",
-      "formula": "product_promotion",
-      "text": "found this weird fruit in my pantry and pantryai saved me",
-      "theme": "PantryAI promotion",
-      "like_rate": 0.0,
-      "retired_date": "2026-02-15",
-      "reason": "Product promotion content gets 0% engagement on this account. Audience mismatch."
-    },
-    {
-      "id": "r002",
-      "formula": "product_promotion",
-      "text": "just found the meal plan hack that's actually a game changer",
-      "theme": "PantryAI promotion",
-      "like_rate": 0.4,
-      "retired_date": "2026-02-15",
-      "reason": "Same as r001. Product promos are dead weight."
-    }
-  ],
-  "weight_rules": {
-    "description": "Weights range 0.0-1.0. Higher = more likely to be selected for content generation.",
-    "proven_threshold": 8.0,
-    "underperformer_threshold": 3.0,
-    "auto_retire_after_failures": 3
+  "metadata": {
+    "last_updated": "",
+    "total_hooks": 1,
+    "active": 1,
+    "retired": 0
   }
 }

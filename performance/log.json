@@ -1,29 +1,20 @@
 {
-  "description": "Post performance tracking. Each entry records a posted draft with metrics at 24h, 48h, and 7d checkpoints.",
   "posts": [
     {
-      "post_id": "4ddb6471-f3e7-4276-bc8e-e0688965258f",
-      "slideshow_id": "121669b2-e386-48bb-be02-7d1ca020fbfe",
-      "date": "2026-02-15",
-      "day": "Sunday",
-      "theme": "Aspirational / big picture",
-      "topic": "Your first AI SaaS in a weekend",
-      "hook_type": "pain_point_to_aspirational",
-      "hook_text": "everyone thinks building AI apps is about the code. actually, the real battle is fighting auth and payments for days.",
-      "pack_id": "67987d66-46e8-4d24-bd6d-5d0759222142",
-      "pack_name": "AnotherWrapper Dev pack",
-      "slides": 5,
-      "aspect_ratio": "9:16",
-      "style": "tiktok",
-      "account_id": "87dab214-20dd-4aa1-806d-d5bf1419d517",
-      "caption_hashtags": ["#nextjs", "#aitools", "#webdev", "#saas", "#indiehacker", "#vibecoding", "#buildinpublic"],
-      "posted_at": "2026-02-15T14:07:27Z",
-      "auto_music": true,
-      "notes": "First automated post. Slide 3 regenerated for shorter body text. Sunday aspirational theme.",
+      "_comment": "Example entry. The agent adds entries here after each post.",
+      "id": "example-post-id",
+      "date": "2026-01-01",
+      "hook": "your hook text here",
+      "hook_type": "pain_point",
+      "pack_id": "",
+      "pack_name": "",
+      "account_id": "",
+      "platform": "tiktok",
       "metrics": {
-        "24h": null,
-        "48h": null,
-        "7d": null
+        "views": 0,
+        "likes": 0,
+        "comments": 0,
+        "shares": 0
       }
     }
   ]

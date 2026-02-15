@@ -43,11 +43,14 @@ The skill handles the full automation. For TikTok slideshow posts, it can option
 
 ## First-Time Setup
 
-If this is a fresh install, read `setup.md` for quick 3-step onboarding:
+If this is a fresh install, read `setup.md` and walk your human through onboarding conversationally:
 
-1. Set API key
-2. List accounts and pick defaults
-3. Pick a default image pack
+1. Set API key and verify it works
+2. List accounts and pick which ones to post to
+3. Discuss image strategy (existing packs, create new ones, generate per post, or mix)
+4. Optionally set up product context and brand voice together
+
+No hardcoded defaults needed. The agent should ask the user what they prefer and adapt. Everything done through this skill shows up in the Genviral dashboard, so the user always has full visibility and control.
 
 All configuration lives in `config.yaml`. Secrets are loaded from environment variables.
 
