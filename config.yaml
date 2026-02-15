@@ -7,8 +7,8 @@ genviral:
   base_url: "https://www.genviral.io/api/partner/v1"
 
 content:
-  # CTAs pack (7 images, good variety)
-  default_pack_id: "b6de9fd0-23c3-4bbe-83c4-6a25ee1a36c9"
+  # AnotherWrapper Dev pack (10 coding/tech images)
+  default_pack_id: "67987d66-46e8-4d24-bd6d-5d0759222142"
   default_slide_count: 5
   default_aspect_ratio: "9:16"
   default_type: "educational"
