@@ -11,7 +11,7 @@ metadata:
 
 # genviral Partner API Skill
 
-> **TL;DR for agents:** This skill wraps genviral's Partner API into 42+ bash commands covering all documented endpoints. Core workflow: `generate` (create slideshow from prompt) > `render` (produce images) > `review` (check quality) > `create-post` (publish). Auth via `GENVIRAL_API_KEY` env var. Config in `config.yaml`. New: full analytics support (summary, posts, targets, refresh). Product context in `context/`. Hook library in `hooks/`. Track results in `performance/`. The skill self-improves: post > track > analyze > adapt strategy > post better content.
+> **TL;DR for agents:** This skill wraps genviral's Partner API into 42+ bash commands covering all documented endpoints. Core workflow: `generate` (create slideshow from prompt) > `render` (produce images) > `review` (check quality) > `create-post` (publish). Auth via `GENVIRAL_API_KEY` env var. Config in `config.md`. New: full analytics support (summary, posts, targets, refresh). Product context in `context/`. Hook library in `hooks/`. Track results in `performance/`. The skill self-improves: post > track > analyze > adapt strategy > post better content.
 
 Complete automation for genviral's Partner API. Create video posts, AI-generated slideshows, manage templates and image packs, track analytics, and schedule content across any platform genviral supports (TikTok, Instagram, etc.).
 
@@ -52,7 +52,7 @@ If this is a fresh install, read `setup.md` and walk your human through onboardi
 
 No hardcoded defaults needed. The agent should ask the user what they prefer and adapt. Everything done through this skill shows up in the Genviral dashboard, so the user always has full visibility and control.
 
-All configuration lives in `config.yaml`. Secrets are loaded from environment variables.
+All configuration lives in `config.md`. Secrets are loaded from environment variables.
 
 ## File Structure
 
@@ -60,7 +60,7 @@ All configuration lives in `config.yaml`. Secrets are loaded from environment va
 genviral/
   SKILL.md                  # This file (comprehensive API reference + strategy)
   setup.md                  # Quick setup guide (3 steps)
-  config.yaml               # API config, defaults, schedule settings
+  config.md               # API config, defaults, schedule settings
 
   context/
     product.md              # Product description, value props, target audience
@@ -96,7 +96,7 @@ All commands use the wrapper script:
 /path/to/genviral/scripts/genviral.sh <command> [options]
 ```
 
-The script requires `GENVIRAL_API_KEY` as an environment variable. It loads defaults from `config.yaml`.
+The script requires `GENVIRAL_API_KEY` as an environment variable. It loads defaults from `config.md`.
 
 ---
 

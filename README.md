@@ -79,7 +79,7 @@ genviral/
   README.md             # This file (human overview)
   cron-setup.md         # Cron job setup for automation
   setup.md              # 3-step onboarding
-  config.yaml           # Configuration
+  config.md           # Configuration
 
   scripts/genviral.sh   # 42+ commands wrapping every API endpoint
 

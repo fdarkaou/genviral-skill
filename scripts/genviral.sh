@@ -87,7 +87,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-CONFIG_FILE="${GENVIRAL_CONFIG:-${SKILL_DIR}/config.yaml}"
+CONFIG_FILE="${GENVIRAL_CONFIG:-${SKILL_DIR}/defaults.yaml}"
 
 # ---------------------------------------------------------------------------
 # Colors
@@ -554,7 +554,7 @@ ${BOLD}Other:${NC}
 
 ${BOLD}Environment:${NC}
   GENVIRAL_API_KEY                Partner API key (required, format: public_id.secret)
-  GENVIRAL_CONFIG                 Optional config.yaml path
+  GENVIRAL_CONFIG                 Optional defaults.yaml path
   NO_COLOR                        Disable colored output
 
 ${BOLD}Examples:${NC}
@@ -2146,7 +2146,7 @@ cmd_post_draft() {
     require_arg "caption" "$caption"
 
     if [[ -z "$account_ids" ]]; then
-        die "--account-ids is required (or set default_account_ids in config.yaml)"
+        die "--account-ids is required (or set default_account_ids in defaults.yaml)"
     fi
 
     [[ -n "$privacy_override" ]] && warn "--privacy is ignored for post-draft. Using SELF_ONLY."
