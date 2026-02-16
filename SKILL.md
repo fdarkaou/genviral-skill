@@ -11,7 +11,7 @@ metadata:
 
 # genviral Partner API Skill
 
-> **TL;DR for agents:** This skill wraps genviral's Partner API into 42+ bash commands covering all documented endpoints. Core workflow: `generate` (create slideshow from prompt) > `render` (produce images) > `review` (check quality) > `create-post` (publish). Auth via `GENVIRAL_API_KEY` env var. Config in `config.md`. New: full analytics support (summary, posts, targets, refresh). Product context in `context/`. Hook library in `hooks/`. Track results in `performance/`. The skill self-improves: post > track > analyze > adapt strategy > post better content.
+> **TL;DR for agents:** This skill wraps genviral's Partner API into 42+ bash commands covering all documented endpoints. Core workflow: `generate` (create slideshow from prompt) > `render` (produce images) > `review` (check quality) > `create-post` (publish). Auth via `GENVIRAL_API_KEY` env var. Config in `defaults.yaml`. New: full analytics support (summary, posts, targets, refresh). Product context in `context/`. Hook library in `hooks/`. Track results in `performance/`. The skill self-improves: post > track > analyze > adapt strategy > post better content.
 
 Complete automation for genviral's Partner API. Create video posts, AI-generated slideshows, manage templates and image packs, track analytics, and schedule content across any platform genviral supports (TikTok, Instagram, etc.).
 
@@ -52,7 +52,7 @@ If this is a fresh install, read `setup.md` and walk your human through onboardi
 
 No hardcoded defaults needed. The agent should ask the user what they prefer and adapt. Everything done through this skill shows up in the Genviral dashboard, so the user always has full visibility and control.
 
-All configuration lives in `config.md`. Secrets are loaded from environment variables.
+All configuration lives in `defaults.yaml`. Secrets are loaded from environment variables.
 
 ## File Structure
 
@@ -60,7 +60,7 @@ All configuration lives in `config.md`. Secrets are loaded from environment vari
 genviral/
   SKILL.md                  # This file (comprehensive API reference + strategy)
   setup.md                  # Quick setup guide (3 steps)
-  config.md               # API config, defaults, schedule settings
+  defaults.yaml               # API config, defaults, schedule settings
 
   context/
     product.md              # Product description, value props, target audience
@@ -96,7 +96,7 @@ All commands use the wrapper script:
 /path/to/genviral/scripts/genviral.sh <command> [options]
 ```
 
-The script requires `GENVIRAL_API_KEY` as an environment variable. It loads defaults from `config.md`.
+The script requires `GENVIRAL_API_KEY` as an environment variable. It loads defaults from `defaults.yaml`.
 
 ---
 
@@ -302,7 +302,7 @@ Returns structured delete results including:
 ## Slideshow Commands
 
 ### generate | generate-slideshow
-Generate a slideshow from a prompt using AI, or create one manually with `--skip-ai`.
+Generate a slideshow from a prompt (AI mode), or build it manually with explicit slide config (`--skip-ai`).
 
 ```bash
 # AI mode (default)
@@ -329,20 +329,35 @@ genviral.sh generate \
   --slide-config-json '{"total_slides":2,"slide_types":["image_pack","custom_image"],...}'
 ```
 
-Options:
-- `--prompt` - AI prompt (required unless `--skip-ai` or `--product-id`)
-- `--pack-id` - Image pack UUID for backgrounds
-- `--slides` - number of slides (1-10, default: 5)
-- `--type` - `educational` or `personal`
-- `--aspect-ratio` - `9:16` (vertical), `4:5` (default), `1:1` (square)
-- `--style` / `--text-preset` - text style preset (e.g., `tiktok`)
-- `--language` - language code (e.g., `en`, `es`, `fr`)
-- `--font-size` - `default` or `small`
-- `--text-width` - `default` or `narrow`
-- `--product-id` - optional product context identifier
-- `--skip-ai` - skip AI text generation (use with `--slide-config-*`)
-- `--slide-config-json` / `--slide-config` - inline JSON slide config
-- `--slide-config-file` - path to JSON file with slide config
+Options (`POST /slideshows/generate`):
+- `--prompt` -> `prompt` (required unless `--skip-ai true` or `--product-id` is provided)
+- `--product-id` -> `product_id` (UUID, optional)
+- `--pack-id` -> `pack_id` (UUID, optional global image pack)
+- `--slides` -> `slide_count` (`1-10`, default `5`)
+- `--type` -> `slideshow_type` (`educational` or `personal`)
+- `--aspect-ratio` -> `aspect_ratio` (`9:16`, `4:5`, `1:1`)
+- `--language` -> `language` (2-32 chars, for example `en`, `es`, `fr`)
+- `--style` / `--text-preset` -> `advanced_settings.text_preset` (string)
+- `--font-size` -> `advanced_settings.font_size` (`default` or `small`)
+- `--text-width` -> `advanced_settings.text_width` (`default` or `narrow`)
+- `--skip-ai` -> `skip_ai` (bool)
+- `--slide-config-json` / `--slide-config` -> `slide_config` (inline JSON)
+- `--slide-config-file` -> `slide_config` (JSON file)
+
+`slide_config` supports:
+- `total_slides` (1-10)
+- `slide_types` (exact length = `total_slides`, each `image_pack` or `custom_image`)
+- `custom_images` map: `{"index": {"image_url", "image_id", "image_name?"}}` (required for each `custom_image` slide)
+- `pinned_images` map: `{"index": "https://..."}`
+- `slide_texts` map: `{"index": "text"}`
+- `slide_text_elements` map: `{"index": [{"content", "x", "y", "id?", "font_size?", "width?"}]}`
+- `pack_assignments` map: `{"index": "pack_uuid"}` (only for `image_pack` slides)
+
+Validation rules you must respect:
+- All slide-config map keys must be numeric 0-based indices in range.
+- `slide_types.length` must equal `total_slides`.
+- Every `image_pack` slide must resolve a pack via global `pack_id` or per-slide `pack_assignments[index]`.
+- Every `custom_image` slide must have `custom_images[index]`.
 
 ### render | render-slideshow
 Render a slideshow to images via Remotion.
@@ -394,8 +409,62 @@ Options:
 - `--slideshow-type` - `educational` or `personal`
 - `--product-id` - Link to product
 - `--clear-product-id` - Detach product
-- `--settings-json` / `--settings-file` - Partial settings patch
+- `--settings-json` / `--settings-file` - Partial settings patch (`image_pack_id`, `aspect_ratio`, `slideshow_type`, `advanced_settings`, `pack_assignments`)
 - `--slides` / `--slides-file` - Full slides array replacement
+
+### Text Styles, Fonts, and Formatting (Slideshow)
+
+Use this as your source of truth when styling text overlays.
+
+**Global generation controls (`advanced_settings`):**
+- `font_size`: `default` or `small`
+- `text_width`: `default` (wide) or `narrow`
+- `text_preset`: style preset string (see presets below)
+
+**Text presets (renderer-supported):**
+- `tiktok` - White text with strong black outline/stroke, optimized for hook readability
+- `inverted` - Black text on a white text box (best when the background is busy)
+- `shadow` - White text with heavy shadow for separation from background
+- `white` - Plain white text, minimal styling
+- `black` - Plain black text, minimal styling
+- `snapchat` - White text on translucent black background bar (UI/editor supports it)
+
+**Partner API note:** `PATCH /slideshows/{id}` `slides[].text_elements[].style_preset` currently validates: `tiktok`, `inverted`, `shadow`, `white`, `black`.
+
+**Font options available in slideshow editor constants:**
+- TikTok Display (default)
+- Anton
+- Arial
+- Bebas Neue
+- Bitcount
+- Cinzel
+- Della
+- Eagle Lake
+- Georgia
+- Helvetica
+- Inter
+- Open Sans
+- Oswald
+- Playwrite
+- Poppins
+- Roboto
+- Russo One
+- TikTok Sans
+- Times New Roman
+
+Apply font per text element using `slides[].text_elements[].font_family` in `update --slides` payload.
+
+**Per-text-element formatting fields (`slides[].text_elements[]`):**
+- `content`, `x`, `y`
+- `font_size`, `width`, `height`
+- `style_preset`, `font_family`
+- `background_color`, `text_color`, `border_radius` (especially useful for `inverted`)
+- `editable`
+
+**Other slide-level visual controls (`slides[]`):**
+- `grid_images` + `grid_type` (`2x2`, `1+2`, `vertical`, `horizontal`)
+- `background_filters` (`brightness`, `contrast`, `saturation`, `hue`, `blur`, `grayscale`, `sepia`, `invert`, `drop_shadow`, `opacity`)
+- `image_overlays` (`id`, `image_url`, `x`, `y`, `width`, `height`, `rotation`, `opacity`)
 
 ### regenerate-slide
 Regenerate AI text for a single slide (0-indexed).
@@ -447,12 +516,48 @@ genviral.sh list-packs --search motivation --include-public false
 genviral.sh list-packs --limit 20 --offset 0 --json
 ```
 
+`list-packs --json` returns pack summaries including:
+- `id`
+- `name`
+- `image_count`
+- `preview_image_url`
+- `is_public`
+- `created_at`
+
 ### get-pack
-Get a single pack with all image URLs.
+Get a single pack with the full ordered image list (what you need for slide-by-slide image selection).
 
 ```bash
 genviral.sh get-pack --id PACK_ID
 ```
+
+`get-pack` returns:
+- `id`, `name`, `image_count`, `is_public`, `created_at`
+- `images[]` ordered by creation time, each with:
+  - `id`
+  - `url`
+
+### Smart Image Selection From Packs (MANDATORY)
+
+Do not pick pack images randomly.
+
+When a slideshow uses a pack, do this every time:
+1. Call `get-pack` and collect **all** `images[].url` entries.
+2. Visually inspect every candidate image URL with a vision-capable tool.
+3. For each slide hook/body text, choose the image that best matches that specific slide.
+4. Validate text-overlay compatibility before finalizing:
+   - Topic match: does the image clearly fit the slide claim?
+   - Overlay readability: enough clean/low-detail space for text?
+   - Contrast: will text style remain legible on this background?
+   - Visual appeal: does it look post-worthy, not generic/awkward?
+5. Avoid repeating near-identical backgrounds unless repetition is deliberate.
+
+Quick scoring rubric per candidate image (1-5 each):
+- Relevance to slide message
+- Readability with planned text
+- Visual quality/composition
+
+Pick the highest total score, not the first/random image.
 
 ### create-pack
 Create a new pack.
@@ -750,21 +855,25 @@ This is the recommended workflow for producing posts.
 
 1. **Hook Selection:** Read `hooks/library.json` and pick a hook. Rotate through categories.
 
-2. **Prompt Assembly:** Use the selected hook to build a full slideshow prompt. Reference `prompts/slideshow.md`.
+2. **Pack Discovery:** Run `list-packs` to find candidate packs, then `get-pack --id ...` to fetch full `images[].url` for candidate packs.
 
-3. **Generate Slideshow:** Run `generate` with the assembled prompt.
+3. **Smart Image Selection (MANDATORY):** For each planned slide, visually inspect pack image URLs and pick the best-fit image for that slide's message. Never pick randomly. Optimize for topic fit, text readability, and visual quality.
 
-4. **Review Slide Text:** Check each slide for clarity, readability, flow. Update or regenerate weak slides.
+4. **Prompt Assembly:** Use the selected hook and chosen visual direction to build a full slideshow prompt. Reference `prompts/slideshow.md`.
 
-5. **Render:** Run `render` to generate final images.
+5. **Generate Slideshow:** Run `generate` with the assembled prompt and pack settings.
 
-6. **Visual Review (MANDATORY):** Before posting, visually inspect EVERY rendered slide using an image analysis tool. Check: (a) background images are relevant to the topic and product, (b) text is readable and not obscured by busy backgrounds, (c) no text overflow or clipping, (d) overall quality is something you'd actually want posted. If any slide fails, regenerate it or swap the image. Never post without reviewing.
+6. **Review Slide Text:** Check each slide for clarity, readability, and flow. Update or regenerate weak slides.
 
-7. **Post:** Use `create-post` with media-type slideshow, or use legacy `post-draft` for TikTok drafts.
+7. **Render:** Run `render` to generate final images.
 
-8. **Log the Post (MANDATORY):** Immediately after posting, append an entry to `content/post-log.md` with: date, time (UTC), post ID, type (slideshow/video), hook/caption snippet, status (posted/scheduled/draft), and which pack was used. This is the single source of truth for all content output. If the file doesn't exist, create it with the header format. Never skip this step.
+8. **Visual Review (MANDATORY):** Before posting, visually inspect EVERY rendered slide using an image analysis tool. Check: (a) background images are relevant to the topic and product, (b) text is readable and not obscured by busy backgrounds, (c) no text overflow or clipping, (d) overall quality is something you'd actually want posted. If any slide fails, regenerate it or swap the image. Never post without reviewing.
 
-9. **Track Performance:** Use analytics endpoints to monitor metrics. During performance checks (evening cron), update `content/post-log.md` with view/like/comment counts for recent posts.
+9. **Post:** Use `create-post` with media-type slideshow, or use legacy `post-draft` for TikTok drafts.
+
+10. **Log the Post (MANDATORY):** Immediately after posting, append an entry to `content/post-log.md` with: date, time (UTC), post ID, type (slideshow/video), hook/caption snippet, status (posted/scheduled/draft), and which pack was used. This is the single source of truth for all content output. If the file doesn't exist, create it with the header format. Never skip this step.
+
+11. **Track Performance:** Use analytics endpoints to monitor metrics. During performance checks (evening cron), update `content/post-log.md` with view/like/comment counts for recent posts.
 
 ### For Video Posts
 

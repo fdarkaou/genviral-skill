@@ -35,7 +35,7 @@ List all connected accounts:
 genviral.sh accounts
 ```
 
-Ask your human which account(s) they want to post to. Could be one, could be several. Set the IDs in `config.md`:
+Ask your human which account(s) they want to post to. Could be one, could be several. Set the IDs in `defaults.yaml`:
 
 ```yaml
 posting:

@@ -6,6 +6,20 @@ Use these templates when generating slideshows via the genviral API. Before usin
 2. Read `context/brand-voice.md` to match the correct tone.
 3. Replace ALL placeholders with product-specific content. Never send placeholders to the API.
 
+## Mandatory Pack Image Selection Workflow
+
+If you are using a pack for slideshow backgrounds, this is required:
+
+1. Run `genviral.sh get-pack --id PACK_ID` and collect all `images[].url` values.
+2. Visually inspect each image URL (use multimodal vision capability).
+3. Map images to slides intentionally. For each slide hook/body text, choose the image that best matches that exact message.
+4. Check text-overlay compatibility before final choice:
+   - Is the image semantically relevant to the slide?
+   - Is there enough clean space for text?
+   - Will text remain readable with your chosen text style?
+   - Is the composition visually appealing and not cluttered?
+5. Do not pick randomly and do not reuse near-identical images unless deliberate.
+
 ## Template 1: Person + Conflict (6 slides)
 
 Best for: Person + conflict hooks where someone doubts the product and gets proven wrong.
@@ -188,10 +202,12 @@ These rules apply to every prompt sent to the genviral API:
 
 4. **Be specific in the story arc.** The more detail you provide about each slide's purpose, the better the output.
 
-5. **Match the prompt to the pack.** If using a nature/outdoor pack, lean into outdoor scenarios. If using a minimalist pack, lean into clean and simple text.
+5. **Match the prompt to the pack, and inspect pack images first.** Do not rely only on pack name. Fetch the pack, inspect actual image URLs, then align slide scenarios with the strongest visuals.
 
-6. **Always review before rendering.** Check each slide's text before calling render. Fix weak slides with update or regenerate-slide.
+6. **Assign visuals slide-by-slide, not randomly.** Explicitly decide which image best supports each slide's hook/body text.
 
-7. **Never send placeholders to the API.** Every bracket must be replaced with real content before generating.
+7. **Always review before rendering.** Check each slide's text before calling render. Fix weak slides with update or regenerate-slide.
 
-8. **No em-dashes.** Instruct the AI explicitly: "Do not use em-dashes."
+8. **Never send placeholders to the API.** Every bracket must be replaced with real content before generating.
+
+9. **No em-dashes.** Instruct the AI explicitly: "Do not use em-dashes."
