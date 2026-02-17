@@ -59,7 +59,7 @@ All configuration lives in `defaults.yaml`. Secrets are loaded from environment 
 ```
 genviral/
   SKILL.md                  # This file (comprehensive API reference + strategy)
-  setup.md                  # Quick setup guide (3 steps)
+  setup.md                  # Onboarding guide (conversational, 5 phases)
   defaults.yaml               # API config, defaults, schedule settings
 
   context/
@@ -77,8 +77,14 @@ genviral/
 
   performance/
     log.json                # Post performance tracking (views, likes, shares)
+    hook-tracker.json       # Hook and CTA tracking with metrics (the feedback loop)
     insights.md             # Agent's learnings from performance data
     weekly-review.md        # Weekly review template and process
+    competitor-insights.md  # Findings from competitor research (generated per product)
+
+  references/
+    competitor-research.md  # How to research competitors before creating content
+    analytics-loop.md       # Full analytics feedback loop process and weekly review
 
   scripts/
     genviral.sh             # Main API wrapper script (all commands)
@@ -1029,7 +1035,20 @@ This is the recommended workflow for producing posts.
 
 11. **Log the Post (MANDATORY):** Immediately after posting, append an entry to `content/post-log.md` with: date, time (UTC), post ID, type (slideshow/video), hook/caption snippet, status (posted/scheduled/draft), and which pack was used. This is the single source of truth for all content output. If the file doesn't exist, create it with the header format. Never skip this step.
 
-12. **Track Performance:** Use analytics endpoints to monitor metrics. During performance checks (evening cron), update `content/post-log.md` with view/like/comment counts for recent posts.
+12. **Tag in Hook Tracker (MANDATORY):** Immediately after logging the post, add an entry to `performance/hook-tracker.json` with the hook text, hook category, CTA text, CTA type, pack ID, post ID, slideshow ID, platform, account ID, and posted timestamp. Set `status` to `posted`. Leave all `metrics` fields as `null` until analytics data is available. This is how you build the feedback loop. No tracking = no learning.
+
+    Hook categories: `person-conflict`, `relatable-pain`, `educational`, `pov`, `before-after`, `feature-spotlight`
+    CTA types: `link-in-bio`, `search-app-store`, `app-name-only`, `soft-cta`, `no-cta`
+
+13. **Performance Check (periodic -- run at 48h and 7d after posting):** Pull analytics for recent posts and update `hook-tracker.json` with real numbers.
+
+    ```bash
+    genviral.sh analytics-posts --range 7d --sort-by views --sort-order desc --json
+    ```
+
+    For each post in the results, find its entry in `hook-tracker.json` by `post_id`, update the `metrics` block with current views, likes, comments, shares, saves, and set `last_checked` to now. Set `status` to `tracking`. See `references/analytics-loop.md` for the full cross-reference process.
+
+14. **Weekly Review (every Monday):** Pull the last 7 days of analytics, apply the diagnostic framework, categorize each hook into `double_down / keep_rotating / testing / dropped`, and write a brief summary in `performance/weekly-review.md`. See `references/analytics-loop.md` for the full review process and decision rules.
 
 ### For Video Posts
 
@@ -1040,6 +1059,140 @@ This is the recommended workflow for producing posts.
 3. **Create Post:** Run `create-post` with media-type video.
 
 4. **Track Performance:** Check analytics.
+
+---
+
+## Performance Feedback Loop
+
+Post. Track. Learn. Adjust. Repeat. This is the only way content improves over time.
+
+The genviral skill has full analytics built in. The missing piece is the discipline to actually use it. This section explains the full loop.
+
+### The Core Files
+
+- `performance/hook-tracker.json` - tracks every post's hook, CTA, and metrics
+- `performance/competitor-insights.md` - niche research and competitor analysis
+- `performance/weekly-review.md` - weekly review notes
+- `references/analytics-loop.md` - full analytics reference and review process
+
+### After Every Post: Tag It
+
+Every post goes into `performance/hook-tracker.json` immediately after posting. The entry structure:
+
+```json
+{
+  "post_id": "...",
+  "slideshow_id": "...",
+  "hook_text": "...",
+  "hook_category": "person-conflict|relatable-pain|educational|pov|before-after|feature-spotlight",
+  "cta_text": "...",
+  "cta_type": "link-in-bio|search-app-store|app-name-only|soft-cta|no-cta",
+  "pack_id": "...",
+  "template_id": null,
+  "posted_at": "2026-02-17T10:00:00Z",
+  "platform": "tiktok|instagram",
+  "account_id": "...",
+  "metrics": {
+    "views": null,
+    "likes": null,
+    "comments": null,
+    "shares": null,
+    "saves": null,
+    "last_checked": null
+  },
+  "status": "posted"
+}
+```
+
+If you skip this, the data is gone. You will never know which hooks worked because you never tracked which hooks you used.
+
+### At 48h and 7d: Pull Metrics
+
+```bash
+genviral.sh analytics-posts --range 7d --sort-by views --sort-order desc --json
+```
+
+Match each post to its hook-tracker entry by `post_id`. Fill in views, likes, comments, shares, saves. Set `last_checked` to now. Set `status` to `tracking`.
+
+### The Diagnostic Framework
+
+Once you have views and engagement rate (likes + comments + shares + saves / views), apply this:
+
+**High views + High engagement rate:** Hook and content both work. SCALE. Make 3 variations of this hook immediately. Move to `rules.double_down`.
+
+**High views + Low engagement rate:** Hook stops the scroll. Content or CTA fails to convert. Keep the hook, fix the content arc or swap the CTA type. Investigate whether a different CTA type changes engagement.
+
+**Low views + High engagement rate:** Content resonates with people who see it. Hook is not stopping the scroll. Rework the hook -- make it more direct, more emotionally charged, or more pattern-interrupting. Content structure is worth keeping.
+
+**Low views + Low engagement rate:** Nothing is working. Drop this angle. Try something radically different. Do not keep iterating on a dead end.
+
+### Decision Rules
+
+| Views | Action |
+|-------|--------|
+| 50K+ | Double down. 3 variations now. Add to `rules.double_down`. |
+| 10K - 50K | Keep in rotation. Improve gradually. Add to `rules.keep_rotating`. |
+| 1K - 10K | Test one more variation. Add to `rules.testing`. |
+| Under 1K, twice | Drop it. Add to `rules.dropped`. |
+
+"Twice" means two separate posts with the same hook category or hook type both failed. One bad post can be a distribution issue. Two is a pattern.
+
+### Weekly Review
+
+Every Monday, run the review:
+
+1. Pull `analytics-summary --range 7d` for the overview
+2. Pull `analytics-posts --range 7d --sort-by views --sort-order desc` for per-post data
+3. Update hook-tracker with fresh metrics
+4. Categorize each recent post (double_down / keep_rotating / testing / dropped)
+5. Check `hook_categories` aggregates: which category has the highest `avg_views`?
+6. Check `cta_performance`: which CTA type has the best `avg_engagement_rate`?
+7. Decide next week's content focus based on data, not intuition
+8. Write a brief summary in `performance/weekly-review.md`
+
+After 4+ weeks of data, patterns become clear. Before that, keep posting a variety of hook categories to build the sample size.
+
+See `references/analytics-loop.md` for the full process, including the weekly review template.
+
+---
+
+## CTA Testing Framework
+
+CTAs are not random. They are a variable you can test systematically.
+
+### CTA Types
+
+| Type | Example | When to Use |
+|------|---------|-------------|
+| `link-in-bio` | "Link in bio to try for free" | When you want traffic to a URL |
+| `search-app-store` | "Search [App Name] on the App Store" | When the app is the product |
+| `app-name-only` | Just say the app name at the end | Soft brand awareness, no friction |
+| `soft-cta` | "Worth checking out" or "Changed everything for me" | When hard CTAs feel off for the content |
+| `no-cta` | Nothing -- content ends naturally | For brand-building content or when CTA would kill the vibe |
+
+### How to Rotate CTAs Systematically
+
+Do not pick CTAs randomly. Rotate them with intent:
+
+1. Start by trying each CTA type 2-3 times across different posts
+2. Track each use in `performance/hook-tracker.json` under `cta_type`
+3. After 10+ posts, check `cta_performance` in hook-tracker: which type has the highest `avg_engagement_rate`?
+4. Shift weight toward the winner. If `search-app-store` consistently outperforms `link-in-bio`, use it more.
+5. Keep testing the others occasionally. What works can change as the account grows.
+
+### Pairing CTAs with Hook Categories
+
+Not all CTAs work equally well with all hook types. Track these combinations in hook-tracker.
+
+As you accumulate data, look for patterns like:
+- "Relatable-pain hooks with soft CTAs get higher engagement than relatable-pain hooks with link-in-bio"
+- "Feature-spotlight hooks with search-app-store CTAs convert better than with no-cta"
+
+After 20+ posts across categories, you will have enough data to make these calls with confidence. Until then, vary and track.
+
+### The Goal
+
+Identify the CTA type that converts best for each hook category. This maximizes the value of every piece of content you produce.
 
 ---
 

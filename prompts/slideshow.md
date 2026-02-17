@@ -212,3 +212,5 @@ These rules apply to every prompt sent to the genviral API:
 8. **Never send placeholders to the API.** Every bracket must be replaced with real content before generating.
 
 9. **No em-dashes.** Instruct the AI explicitly: "Do not use em-dashes."
+
+10. **Track the hook you use.** After posting, log the hook text, hook category, and CTA to `performance/hook-tracker.json`. The tracker is how you learn what actually works. If you never log hooks, you are flying blind -- you will repeat failed hooks and underuse winners. See `references/analytics-loop.md` for the full process.

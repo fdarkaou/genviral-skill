@@ -10,106 +10,168 @@ Before anything else, explain:
 
 This is important. People worry about agents doing things they can't see or control. Reassure them.
 
-## Step 1: API Key
+---
 
-Get your API key from https://www.genviral.io (Settings > API Keys), then set it:
+## Onboarding Flow
+
+Follow these phases in order. Each phase is conversational -- ask questions, listen, then move forward. Do not dump a checklist on them.
+
+### Phase 1: Get to Know Their Product
+
+Before touching any config or API, understand what you are working with.
+
+Ask these questions naturally (not all at once -- let it be a conversation):
+
+- "What's the product? Give me the one-sentence pitch."
+- "Who is it for? What kind of person downloads or buys it?"
+- "What problem does it solve? What is the pain before they find this product?"
+- "What are the 2-3 features people actually care about?"
+- "Do you have any social media presence already? What's worked before, if anything?"
+- "What's the website or app store link?"
+
+As they answer, fill in `context/product.md` and `context/brand-voice.md`. You are building the foundation that every piece of content will reference.
+
+Do not rush this phase. A weak product brief produces weak content. A good one makes everything downstream easier.
+
+### Phase 2: Competitor Research
+
+Before creating any content, understand the competitive landscape. This takes 15-20 minutes and saves weeks of guessing.
+
+Read `references/competitor-research.md` for the full process. The short version:
+
+1. Ask: "Who else is making content for this niche? Any accounts you admire or follow?"
+2. Use the browser tool to search TikTok (and Instagram if relevant) for the niche keywords
+3. Find 3-5 accounts posting in this space
+4. Analyze their top content: what hooks work, what formats dominate, what view baseline looks like
+5. Identify gaps: what is nobody doing?
+
+Save findings to `performance/competitor-insights.md`.
+
+Tell your human what you found: "In this niche, most content uses relatable-pain hooks and talking-head videos. Nobody is doing educational slideshows. That is our opening."
+
+This research shapes every creative decision from here on.
+
+### Phase 3: Image and Content Strategy
+
+Now figure out the visual approach.
+
+**First, set up API access:**
+
+Get the API key from https://www.genviral.io (Settings > API Keys), then:
 
 ```bash
 export GENVIRAL_API_KEY="your_public_id.your_secret"
 ```
 
-Add it to your environment file to persist across sessions.
-
-**Test it works:**
+Test it:
 ```bash
 genviral.sh accounts
 ```
 
-If this returns your connected accounts, you're good.
+If this returns connected accounts, you are good.
 
-## Step 2: Pick Your Account(s)
+**Then, discuss image strategy.** Do NOT hardcode a pack without asking. Explain the options:
 
-List all connected accounts:
-
+**Option A: Use an existing image pack**
 ```bash
-genviral.sh accounts
+genviral.sh list-packs
 ```
+Show them what is available. If they like one, great. Set it in config or pass it per-slideshow.
 
-Ask your human which account(s) they want to post to. Could be one, could be several. Set the IDs in `defaults.yaml`:
+**Option B: Create a new pack**
+Ask what kind of images fit their brand. Then either:
+- Help them upload images: `genviral.sh create-pack --name "My Pack"` then `genviral.sh add-pack-image --pack-id X --image-url "https://..."`
+- Suggest they create one in the Genviral UI (easier for bulk uploads)
 
+**Option C: Generate images per post**
+The agent can generate images (via OpenAI, etc.) for each slideshow instead of pulling from a pack. No pack needed. More variety, less visual consistency.
+
+**Option D: Mix and match**
+Use a pack for some posts, generate fresh images for others. The agent decides based on content needs.
+
+Set the account IDs in `defaults.yaml`:
 ```yaml
 posting:
   default_account_ids: "ACCOUNT_ID_1"  # comma-separated for multiple
 ```
 
-## Step 3: Images (Let the User Decide)
+### Phase 4: First Test Slideshow
 
-This is where it gets flexible. **Do NOT hardcode a default pack.** Instead, explain the options:
+Make the first post together. This is iterative -- do not aim for perfect on the first try.
 
-### Option A: Use an existing image pack
-```bash
-genviral.sh list-packs
-```
-Show them what's available (their own packs + community packs). If they like one, great. Set it in config or pass it per-slideshow.
-
-### Option B: Create a new pack
-Ask what kind of images fit their brand. Then either:
-- Help them upload images: `genviral.sh create-pack --name "My Pack"` then `genviral.sh add-pack-image --pack-id X --url "https://..."`
-- Suggest they create one in the Genviral UI (drag and drop is easier for bulk uploads)
-
-### Option C: Generate images per post
-The agent can generate images (via OpenAI, etc.) for each slideshow instead of pulling from a pack. No pack needed. More variety, but costs per image and less visual consistency.
-
-### Option D: Mix and match
-Use a pack for some posts, generate fresh images for others. The agent can decide based on the content.
-
-**The key message:** Packs are a convenience, not a requirement. The agent can work with or without them.
-
-## Step 4: Product Context (Optional but Recommended)
-
-Ask your human about their product. Fill in `context/product.md` together:
-- What's the product?
-- Who's it for?
-- What are the key features?
-- What's the website?
-
-Then fill in `context/brand-voice.md`:
-- How should content sound? (casual, professional, witty?)
-- Any words or phrases to avoid?
-- Example captions they like?
-
-These files make the agent's content way more relevant. But they're optional. The agent can start posting with just an account and some images.
-
-## Step 5: First Post
-
-Walk them through creating their first slideshow:
+1. Pick a hook from `hooks/library.json` or brainstorm one based on competitor research
+2. Pick a template from `prompts/slideshow.md`
+3. Generate the slideshow, review the slides together, refine until it looks right
+4. Post as a TikTok draft (so they can add trending audio before publishing)
 
 ```bash
-genviral.sh generate --prompt "Your prompt here"
-genviral.sh render --slideshow-id SLIDESHOW_ID
-genviral.sh create-post --caption "your caption" --media-type slideshow --slideshow-id SLIDESHOW_ID --accounts ACCOUNT_ID
+genviral.sh generate --prompt "Your prompt here" --pack-id PACK_ID --slides 5
+genviral.sh render --id SLIDESHOW_ID
+genviral.sh create-post --caption "your caption" --media-type slideshow --media-urls "url1,url2,..." --accounts ACCOUNT_ID --tiktok-post-mode MEDIA_UPLOAD --tiktok-privacy SELF_ONLY
 ```
 
-Or use the full pipeline command if they want it all in one go.
+After posting, log the hook text, category, and CTA to `performance/hook-tracker.json`. This is the start of the feedback loop.
 
-**Remind them:** For TikTok, posting as a draft lets them add trending music before publishing. That's often the best workflow.
+Remind them: for TikTok, posting as a draft lets them add trending music before publishing. That is usually the best workflow.
+
+### Phase 5: Set Up the Feedback Loop
+
+The skill gets smarter over time, but only if you actually track results.
+
+After the first post goes live (give it 48-72 hours minimum before checking):
+
+1. Pull analytics: `genviral.sh analytics-posts --range 7d --sort-by views --sort-order desc`
+2. Update `performance/hook-tracker.json` with the actual view and engagement numbers
+3. Apply the diagnostic framework (see `references/analytics-loop.md`)
+4. Set up a weekly review routine -- every Monday, check the previous week's posts and adjust the content plan
+
+Explain this to your human:
+> "We will check how each post performs after a few days and use that data to figure out what hooks and formats to double down on. It takes a few weeks to build enough data to see patterns, but once we do, the content gets measurably better."
+
+---
+
+## TikTok Account Warmup (New Accounts Only)
+
+If your human is using a brand-new TikTok account, do NOT post immediately. New accounts need to warm up first or the algorithm will suppress content.
+
+**Warmup period: 7-14 days of normal usage before any posting.**
+
+What to do during warmup:
+- Scroll the For You page normally for 10-15 minutes per day
+- Like content sparingly (about 1 in every 10 videos, not every single one)
+- Follow 5-10 accounts in the niche
+- Leave a few genuine, non-spammy comments per day
+- Do NOT post, do NOT go to the profile repeatedly, do NOT make the account look like a bot
+
+**Signal that the account is ready:** The For You page starts showing mostly niche-relevant content (the algorithm has figured out the account's interests). When 70%+ of recommended content matches the target niche, the account is warmed up.
+
+Tell your human: "A new account that starts posting immediately gets worse distribution. Give it 1-2 weeks of normal usage first. We can use that time to get content ready."
+
+**Skip warmup entirely for established accounts** (any account with existing followers and posting history). This only applies to brand-new accounts.
+
+---
 
 ## What's Next?
 
-Once they're posting, the agent can:
+Once they are posting, the agent can:
 - Set up a daily content cron (see `cron-setup.md`)
-- Track performance via analytics
-- Build a hook library based on what works
-- Run weekly strategy reviews
+- Track performance via analytics and update `performance/hook-tracker.json`
+- Run weekly strategy reviews (see `references/analytics-loop.md`)
+- Build and refine the hook library based on what actually works
+- Research competitors periodically to stay ahead of niche trends
 
-The skill self-improves over time. The more it posts and tracks, the better it gets at picking hooks and timing.
+The skill self-improves over time. The more it posts and tracks, the better it gets at picking hooks, timing, and format.
+
+---
 
 ## Onboarding Tone
 
-Be helpful, not overwhelming. Don't dump all 42 commands on them. Start with:
-1. "Let's get your API key set up"
-2. "Which account do you want to post to?"
-3. "Do you have images ready, or want me to help with that?"
-4. "Let's make your first post together"
+Be helpful, not overwhelming. Do not dump all 42 commands on them. The conversation should feel like:
+
+1. "Tell me about your product and who it's for."
+2. "Let me look at what's working in your niche right now."
+3. "What kind of images do you want to use?"
+4. "Let's make your first post together."
+5. "Here's how we'll track what works."
 
 That's it. Everything else comes naturally as they use the skill.
