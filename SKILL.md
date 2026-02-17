@@ -418,6 +418,60 @@ Options:
 - `--settings-json` / `--settings-file` - Partial settings patch (`image_pack_id`, `aspect_ratio`, `slideshow_type`, `advanced_settings`, `pack_assignments`)
 - `--slides` / `--slides-file` - Full slides array replacement
 
+**Critical: `--slides` payload rules (the API is strict about these):**
+
+1. **No `null` values.** Omit any field you don't want to set. Sending `"field": null` causes a 422.
+2. **No `index` field.** Slide order is determined by array position (0-based). Do not include `"index": 0` etc.
+3. **`background_filters` requires ALL 10 sub-fields** when present. If you include the object, you must provide every key with a numeric value:
+   ```json
+   "background_filters": {
+     "brightness": 0.5,
+     "contrast": 1,
+     "saturation": 1,
+     "hue": 0,
+     "blur": 0,
+     "grayscale": 0,
+     "sepia": 0,
+     "invert": 0,
+     "drop_shadow": 0,
+     "opacity": 1
+   }
+   ```
+   Omitting any sub-field (e.g. leaving out `drop_shadow`) causes a 422. Default values: brightness=1, contrast=1, saturation=1, hue=0, blur=0, grayscale=0, sepia=0, invert=0, drop_shadow=0, opacity=1.
+4. **Each slide needs at minimum:** `image_url` and `text_elements` array (can be empty `[]`).
+5. **Preserve existing fields** you don't want to change. The `--slides` payload is a full replacement of all slides, not a merge.
+
+**Example: darken slide 0's background for better text readability:**
+```json
+[
+  {
+    "image_url": "https://cdn.example.com/slide-0-bg.jpg",
+    "text_elements": [
+      {
+        "content": "Your hook text here",
+        "x": 50,
+        "y": 50,
+        "font_size": 48,
+        "width": 80,
+        "style_preset": "tiktok"
+      }
+    ],
+    "background_filters": {
+      "brightness": 0.5,
+      "contrast": 1,
+      "saturation": 1,
+      "hue": 0,
+      "blur": 0,
+      "grayscale": 0,
+      "sepia": 0,
+      "invert": 0,
+      "drop_shadow": 0,
+      "opacity": 1
+    }
+  }
+]
+```
+
 ### Text Styles, Fonts, and Formatting (Slideshow)
 
 Use this as your source of truth when styling text overlays.
