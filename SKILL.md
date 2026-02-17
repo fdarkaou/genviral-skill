@@ -11,7 +11,7 @@ metadata:
 
 # genviral Partner API Skill
 
-> **TL;DR for agents:** This skill wraps genviral's Partner API into 42+ bash commands covering all documented endpoints. Core workflow: `get-pack` (fetch images) > **visually inspect every image** (use vision/image tool) > `generate` with `pinned_images` (assign images to slides) > `render` (produce images) > **visually review rendered slides** > `create-post` (publish). Auth via `GENVIRAL_API_KEY` env var. Config in `defaults.yaml`. **Critical: you MUST use a vision tool to look at pack images before generating, and use `pinned_images` in `slide_config` to control which image goes on which slide.** Product context in `context/`. Hook library in `hooks/`. Track results in `performance/`.
+> **TL;DR for agents:** This skill wraps genviral's Partner API into 42+ bash commands covering all documented endpoints. Core workflow: `get-pack` (fetch images + AI metadata) > **analyze images** (use metadata descriptions/keywords + vision tool for readability) > `generate` with `pinned_images` (assign images to slides) > `render` (produce images) > **visually review rendered slides** (hard gate) > `create-post` (publish). Auth via `GENVIRAL_API_KEY` env var. Config in `defaults.yaml`. **Critical: use `pinned_images` in `slide_config` to control which image goes on which slide. Pack images include AI metadata (description, keywords) for smarter selection. Use vision tools for readability assessment of rendered output.** Product context in `context/`. Hook library in `hooks/`. Track results in `performance/`.
 
 Complete automation for genviral's Partner API. Create video posts, AI-generated slideshows, manage templates and image packs, track analytics, and schedule content across any platform genviral supports (TikTok, Instagram, etc.).
 
@@ -516,6 +516,8 @@ genviral.sh list-packs --search motivation --include-public false
 genviral.sh list-packs --limit 20 --offset 0 --json
 ```
 
+**`--search` is metadata-aware:** It matches across pack names AND AI image metadata (descriptions + keywords). So `--search "gym workout"` finds packs containing images tagged with those terms, even if the pack name is something generic.
+
 `list-packs --json` returns pack summaries including:
 - `id`
 - `name`
@@ -536,28 +538,59 @@ genviral.sh get-pack --id PACK_ID
 - `images[]` ordered by creation time, each with:
   - `id`
   - `url`
+  - `metadata` — AI-generated enrichment (populated asynchronously after image is added):
+    - `status`: `pending` | `processing` | `completed` | `failed`
+    - `description`: One-sentence description of the image content (null if not yet processed)
+    - `keywords`: Array of lowercase search-friendly keywords (subject, mood, style, use-cases)
+    - `model`: AI model used for analysis (e.g. `gpt-4.1-nano`)
+    - `generated_at`: ISO timestamp when metadata was generated
+    - `error`: Error message if processing failed (null on success)
+
+**Example image with metadata:**
+```json
+{
+  "id": "22222222-2222-2222-2222-222222222222",
+  "url": "https://cdn.example.com/packs/motivation/01.jpg",
+  "metadata": {
+    "status": "completed",
+    "description": "Woman lifting dumbbells in a bright, minimal gym environment.",
+    "keywords": ["fitness", "workout", "strength", "gym", "motivation", "healthy lifestyle"],
+    "model": "gpt-4.1-nano",
+    "generated_at": "2026-02-17T11:02:00.000Z",
+    "error": null
+  }
+}
+```
 
 ### Smart Image Selection From Packs (MANDATORY)
 
-**Do not skip this.** If you just pass `--pack-id` to `generate` without `pinned_images`, the server picks background images randomly from the pack. That produces incoherent slideshows. You MUST visually inspect pack images and pin them to specific slides.
+**Do not skip this.** If you just pass `--pack-id` to `generate` without `pinned_images`, the server picks background images randomly from the pack. That produces incoherent slideshows. You MUST select images deliberately and pin them to specific slides.
 
 #### Step-by-step (required every time a pack is used):
 
-**1. Fetch all images:**
+**1. Fetch pack images with metadata:**
 ```bash
 genviral.sh get-pack --id PACK_ID
 ```
-Collect every `images[].url` from the response.
+Collect every `images[].url` and `images[].metadata` from the response. Each image includes AI-generated metadata with `description` (what the image shows) and `keywords` (searchable tags).
 
-**2. Visually analyze every image:**
-For each image URL, use a vision/image-analysis tool to actually look at it. Example (OpenClaw agents):
+**2. Use metadata to understand and shortlist images:**
+Read each image's `metadata.description` and `metadata.keywords` to understand what it shows without needing to fetch every image visually. This is your primary selection tool:
+- Match images to slide topics by description/keywords
+- Filter out irrelevant images quickly
+- If metadata `status` is `pending` or `failed`, the description won't be available — use vision tool for those
+
+**When to use the vision/image tool additionally:**
+- When metadata is unavailable (status not `completed`)
+- When you need to assess **readability** (clean space for text, contrast, visual complexity) — metadata describes content but not layout suitability
+- When the metadata description is ambiguous and you need a closer look
+- For rendered slide review (always — see step 9 in pipeline)
+
+Example vision call for readability assessment:
 ```
 image(image="https://images.unsplash.com/photo-xxx?w=1080&q=80",
-      prompt="Describe this image for slideshow use: subject, composition, clean space for text overlay, readability risks.")
+      prompt="Assess for slideshow text overlay: Where is clean space? How busy/detailed is the background? What text color/style would be most readable?")
 ```
-You can analyze multiple images in parallel. Record what each image shows (e.g., "laptop with code editor, dark background, clean space top-left").
-
-**Do not describe images from the URL alone.** The URL tells you nothing about the actual content. You must fetch and view the image.
 
 **3. Plan your slides first, then match images:**
 Before picking images, know your slide content:
@@ -567,15 +600,13 @@ Before picking images, know your slide content:
 - Slide 3: Feature/proof
 - Slide 4: CTA
 
-For each slide, pick the image that best fits based on:
-- Topic match: does the image relate to the slide's message?
-- Text readability: is there enough clean/low-detail space for the text overlay?
-- Contrast: will white/bold text remain legible on this background?
-- Visual quality: would you actually want this posted?
+For each slide, pick the image that best fits. Consider:
+- **Topic match:** Does the image's description/keywords relate to the slide's message?
+- **Text readability:** Will text be readable over this background? (Use vision tool if unsure)
+- **Visual variety:** Avoid using near-identical images across slides
+- **CTA slides** benefit from cleaner, less busy backgrounds
 
-Score each candidate 1-5 on relevance, readability, and quality. Pick the highest total. Avoid repeating near-identical images across slides.
-
-**Also decide the text style per slide during this step.** Busy background? Use `inverted`. Dark and clean? Use `tiktok`. See "Choosing text style per slide" below for the full decision table.
+Use your judgment. There's no rigid formula — the right image depends on the specific content, the pack's images, and what looks good together.
 
 **4. Build `pinned_images` and pass to generate:**
 Once you've mapped images to slides, use `pinned_images` in `slide_config` so the server uses YOUR chosen images, not random ones:
@@ -629,28 +660,32 @@ Instead of `pinned_images` with `image_pack` type, you can use `custom_image` ty
 ```
 Use `custom_images` with `--skip-ai` when you want full manual control over both images AND text. Use `pinned_images` with AI generation when you want the AI to write text but you control the images.
 
-#### Choosing text style per slide (IMPORTANT)
+#### Choosing text styles (THINK, DON'T FOLLOW A TABLE)
 
-Different backgrounds need different text styles. Do NOT blindly use the same style for every slide. During visual inspection, note the background complexity, then pick the right style:
+Different backgrounds call for different text styles. Do NOT use the same style on every slide, and do NOT follow rigid rules. Use your judgment based on what you see.
 
-| Background type | Best style | Why |
-|---|---|---|
-| Busy/detailed (code, UI, multi-object) | `inverted` | Black text on white box cuts through any background |
-| Dark with some detail | `tiktok` | White text with black outline, good on darker images |
-| Dark and clean | `white` or `shadow` | Clean white text works when background is simple |
-| Light/bright backgrounds | `black` | Dark text on light backgrounds |
-| Mixed/uncertain | `inverted` | Safest choice, always readable |
+**Available styles and what they do:**
+- `tiktok` — White text with strong black outline/stroke. The "default" TikTok look.
+- `inverted` — Black text on a white box. High contrast, cuts through anything.
+- `shadow` — White text with heavy drop shadow. Subtle separation from background.
+- `white` — Plain white text, minimal styling.
+- `black` — Plain black text, minimal styling.
+- `snapchat` — White text on a translucent dark bar.
 
-**The rule:** If during your visual inspection you see the background is busy (code on screen, multiple objects, colorful elements), use `inverted`. Only use `tiktok` on darker, cleaner backgrounds where the white outline will actually pop.
+**What to consider when choosing:**
+- How busy/detailed is the background? (metadata keywords can hint at this; vision tool confirms)
+- What's the dominant color/brightness of the area where text lands?
+- Does the slide have a clear zone for text, or is the whole image complex?
+- What's the overall aesthetic of the slideshow? Consistency matters, but readability matters more.
 
-You can set style per-slide using `slides[].text_elements[].style_preset` in the `update-slideshow` command. So you can use `tiktok` on slide 1 (dark background) and `inverted` on slide 3 (busy code background).
+**You have full control per slide.** Set `style_preset` per text element using `slides[].text_elements[].style_preset` in the `update-slideshow` command. Mix styles across slides when it makes sense.
 
-You can also improve readability with `background_filters` via `update-slideshow`:
-- `{"brightness": 0.5}` darkens a busy image
-- `{"blur": 2}` softens detail so text pops
-- Combine both for very busy backgrounds
+**You can also adjust the background itself** with `background_filters` via `update-slideshow`:
+- `brightness`, `contrast`, `saturation`, `blur`, `opacity`, etc.
+- Example: darken a busy image (`{"brightness": 0.5}`) or blur it (`{"blur": 2}`) to make text pop
+- These can be combined and tuned per slide
 
-CTA slides need clean, uncluttered backgrounds. If your pack doesn't have one, use a simple solid or gradient image.
+**The goal is readability.** If text is hard to read at a glance, fix it — change the style, adjust the background, or pick a different image. There's no single "correct" style; the correct one is whatever makes the slide look good and the text instantly readable.
 
 ### create-pack
 Create a new pack.
@@ -678,12 +713,14 @@ genviral.sh delete-pack --id PACK_ID
 ```
 
 ### add-pack-image
-Add an image to a pack.
+Add an image to a pack. The response includes initial metadata status (`pending`) while AI enrichment (description, keywords) runs asynchronously in the background.
 
 ```bash
 genviral.sh add-pack-image --pack-id PACK_ID --image-url "https://cdn.example.com/image.jpg"
 genviral.sh add-pack-image --pack-id PACK_ID --image-url "https://cdn.example.com/image.jpg" --file-name "hero-1.jpg"
 ```
+
+After adding, metadata will be auto-generated. Re-fetch the pack later to get completed metadata.
 
 ### delete-pack-image
 Remove an image from a pack.
@@ -950,10 +987,10 @@ This is the recommended workflow for producing posts.
 
 2. **Pack Discovery:** Run `list-packs` to find candidate packs, then `get-pack --id ...` to fetch the full `images[]` array with URLs.
 
-3. **Visually Inspect Pack Images (MANDATORY - DO NOT SKIP):**
-   For EVERY image URL in the pack, use a vision/image-analysis tool to actually look at the image. Do not guess from the URL. Record what each image shows (subject, mood, clean space for text, readability risks). See "Smart Image Selection From Packs" section above for the exact tool calls and scoring rubric.
+3. **Analyze Pack Images (MANDATORY - DO NOT SKIP):**
+   Read each image's AI metadata (`description`, `keywords`) from the `get-pack` response. This tells you what each image shows. For images where you need to assess readability (clean space for text overlay, background complexity), use a vision/image tool. See "Smart Image Selection From Packs" section above for details.
 
-4. **Map Images to Slides:** Plan your 5 slides (hook, problem, shift, feature, CTA), then assign the best-matching image to each slide based on your visual analysis. Build a `pinned_images` map: `{"0": "url_for_hook", "1": "url_for_problem", ...}`.
+4. **Map Images to Slides:** Plan your 5 slides (hook, problem, shift, feature, CTA), then assign the best-matching image to each slide based on metadata + visual analysis. Build a `pinned_images` map: `{"0": "url_for_hook", "1": "url_for_problem", ...}`.
 
 5. **Prompt Assembly:** Use the selected hook and chosen visual direction to build a full slideshow prompt. Reference `prompts/slideshow.md`.
 
@@ -979,10 +1016,11 @@ This is the recommended workflow for producing posts.
 
    **If ANY slide fails readability: you MUST fix it before moving on.** Do not just report "needs fixing." Actually fix it:
    ```bash
-   # Fix: update the slide's style_preset to inverted, then re-render
-   genviral.sh update --id SLIDESHOW_ID --slides '[...slides with style_preset changed to "inverted"...]'
+   # Fix: update the slide's style_preset, background_filters, or image — then re-render
+   genviral.sh update --id SLIDESHOW_ID --slides '[...slides with adjusted style_preset, filters, etc...]'
    genviral.sh render --id SLIDESHOW_ID
    ```
+   Options: change `style_preset`, add `background_filters` (darken, blur), swap the image, adjust text positioning. Pick whatever makes it readable.
    Then visually review the fixed slides again. Repeat until ALL slides pass.
 
    **You are NOT allowed to proceed to step 10 until every slide is readable.** This is a hard gate, not a suggestion.

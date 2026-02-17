@@ -10,16 +10,16 @@ Use these templates when generating slideshows via the genviral API. Before usin
 
 If you are using a pack for slideshow backgrounds, this is required. **Do not skip any step.**
 
-1. Run `genviral.sh get-pack --id PACK_ID` and collect all `images[].url` values.
-2. **Visually analyze every image** using a vision/image-analysis tool (e.g., OpenClaw's `image` tool, or any multimodal vision capability). For each URL, actually look at the image and describe what it shows. Do NOT guess from the URL string alone.
-3. Plan your slides first (hook text, body text per slide), then map the best-matching image to each slide based on your visual analysis.
-4. Check text-overlay compatibility before final choice:
-   - Is the image semantically relevant to the slide?
-   - Is there enough clean space for text?
-   - Will text remain readable with your chosen text style?
-   - Is the composition visually appealing and not cluttered?
-5. Do not pick randomly and do not reuse near-identical images unless deliberate.
-6. **Use `pinned_images` in `slide_config`** when calling `generate` to force the server to use your chosen images. Without `pinned_images`, the server picks randomly from the pack and your visual analysis is wasted. See SKILL.md "Smart Image Selection From Packs" for the exact command format.
+1. Run `genviral.sh get-pack --id PACK_ID` and collect all `images[].url` and `images[].metadata` values.
+2. **Use AI metadata first:** Read each image's `metadata.description` and `metadata.keywords` to understand what it shows. This lets you shortlist candidates without fetching every image visually.
+3. **Use vision tools when needed:** For images with `pending`/`failed` metadata, or when you need to assess readability (clean space, background complexity, text overlay suitability), use a vision/image tool.
+4. Plan your slides first (hook text, body text per slide), then map the best-matching image to each slide based on metadata + visual analysis.
+5. Consider for each match:
+   - Does the image's description/keywords relate to the slide's message?
+   - Is there space for readable text? (vision tool helps here)
+   - Is the composition visually appealing?
+6. Do not pick randomly and do not reuse near-identical images unless deliberate.
+7. **Use `pinned_images` in `slide_config`** when calling `generate` to force the server to use your chosen images. Without `pinned_images`, the server picks randomly from the pack and your analysis is wasted. See SKILL.md "Smart Image Selection From Packs" for the exact command format.
 
 ## Template 1: Person + Conflict (6 slides)
 
@@ -203,7 +203,7 @@ These rules apply to every prompt sent to the genviral API:
 
 4. **Be specific in the story arc.** The more detail you provide about each slide's purpose, the better the output.
 
-5. **Match the prompt to the pack, and inspect pack images first.** Do not rely only on pack name. Fetch the pack, use a vision tool to actually look at every image, then align slide scenarios with the strongest visuals.
+5. **Match the prompt to the pack, and inspect pack images first.** Do not rely only on pack name. Fetch the pack, read image metadata (descriptions + keywords), and use vision tools where needed for readability assessment. Align slide scenarios with the strongest visuals.
 
 6. **Assign visuals slide-by-slide using `pinned_images`.** Explicitly decide which image best supports each slide's hook/body text, then pass `pinned_images` in `slide_config` so the server uses your choices. Without `pinned_images`, the server picks randomly and your visual analysis is wasted.
 
