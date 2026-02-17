@@ -971,7 +971,21 @@ This is the recommended workflow for producing posts.
 
 8. **Render:** Run `render` to generate final images.
 
-9. **Visual Review (MANDATORY):** Before posting, visually inspect EVERY rendered slide image using a vision/image-analysis tool. Check: (a) background images match what you intended for each slide, (b) text is readable and not obscured by busy backgrounds, (c) no text overflow or clipping, (d) overall quality is something you'd actually want posted. If text is hard to read on a busy background, change the `style_preset` for that slide (e.g., switch from `tiktok` to `inverted`), or apply `background_filters` to dim/blur the image, then re-render. Don't post unreadable slides.
+9. **Visual Review + Fix Loop (MANDATORY — DO NOT SKIP THE FIX):**
+   Visually inspect EVERY rendered slide using a vision/image-analysis tool. For each slide, check:
+   - (a) Is text readable at a glance? Can you read it in under 2 seconds?
+   - (b) Does the background match your intent?
+   - (c) Any text overflow or clipping?
+
+   **If ANY slide fails readability: you MUST fix it before moving on.** Do not just report "needs fixing." Actually fix it:
+   ```bash
+   # Fix: update the slide's style_preset to inverted, then re-render
+   genviral.sh update --id SLIDESHOW_ID --slides '[...slides with style_preset changed to "inverted"...]'
+   genviral.sh render --id SLIDESHOW_ID
+   ```
+   Then visually review the fixed slides again. Repeat until ALL slides pass.
+
+   **You are NOT allowed to proceed to step 10 until every slide is readable.** This is a hard gate, not a suggestion.
 
 10. **Post:** Use `create-post` with media-type slideshow, or use legacy `post-draft` for TikTok drafts.
 
