@@ -575,6 +575,8 @@ For each slide, pick the image that best fits based on:
 
 Score each candidate 1-5 on relevance, readability, and quality. Pick the highest total. Avoid repeating near-identical images across slides.
 
+**Also decide the text style per slide during this step.** Busy background? Use `inverted`. Dark and clean? Use `tiktok`. See "Choosing text style per slide" below for the full decision table.
+
 **4. Build `pinned_images` and pass to generate:**
 Once you've mapped images to slides, use `pinned_images` in `slide_config` so the server uses YOUR chosen images, not random ones:
 
@@ -627,12 +629,28 @@ Instead of `pinned_images` with `image_pack` type, you can use `custom_image` ty
 ```
 Use `custom_images` with `--skip-ai` when you want full manual control over both images AND text. Use `pinned_images` with AI generation when you want the AI to write text but you control the images.
 
-#### Text readability on busy backgrounds
-Most coding/tech images are visually busy. To keep text readable:
-- Use `--style tiktok` (white text with strong black outline) or `--style inverted` (black text on white box) for best readability
-- For very busy backgrounds, prefer `inverted` style which places text in a box
-- Apply `background_filters` via `update-slideshow` to dim images: `{"brightness": 0.5}` or `{"blur": 2}` makes text pop
-- CTA slides need clean, uncluttered backgrounds. If your pack doesn't have one, use a simple solid or gradient image
+#### Choosing text style per slide (IMPORTANT)
+
+Different backgrounds need different text styles. Do NOT blindly use the same style for every slide. During visual inspection, note the background complexity, then pick the right style:
+
+| Background type | Best style | Why |
+|---|---|---|
+| Busy/detailed (code, UI, multi-object) | `inverted` | Black text on white box cuts through any background |
+| Dark with some detail | `tiktok` | White text with black outline, good on darker images |
+| Dark and clean | `white` or `shadow` | Clean white text works when background is simple |
+| Light/bright backgrounds | `black` | Dark text on light backgrounds |
+| Mixed/uncertain | `inverted` | Safest choice, always readable |
+
+**The rule:** If during your visual inspection you see the background is busy (code on screen, multiple objects, colorful elements), use `inverted`. Only use `tiktok` on darker, cleaner backgrounds where the white outline will actually pop.
+
+You can set style per-slide using `slides[].text_elements[].style_preset` in the `update-slideshow` command. So you can use `tiktok` on slide 1 (dark background) and `inverted` on slide 3 (busy code background).
+
+You can also improve readability with `background_filters` via `update-slideshow`:
+- `{"brightness": 0.5}` darkens a busy image
+- `{"blur": 2}` softens detail so text pops
+- Combine both for very busy backgrounds
+
+CTA slides need clean, uncluttered backgrounds. If your pack doesn't have one, use a simple solid or gradient image.
 
 ### create-pack
 Create a new pack.
@@ -953,7 +971,7 @@ This is the recommended workflow for producing posts.
 
 8. **Render:** Run `render` to generate final images.
 
-9. **Visual Review (MANDATORY):** Before posting, visually inspect EVERY rendered slide image using a vision/image-analysis tool. Check: (a) background images match what you intended for each slide, (b) text is readable and not obscured by busy backgrounds, (c) no text overflow or clipping, (d) overall quality is something you'd actually want posted. If any slide fails, fix the text, swap the image via `update-slideshow`, and re-render.
+9. **Visual Review (MANDATORY):** Before posting, visually inspect EVERY rendered slide image using a vision/image-analysis tool. Check: (a) background images match what you intended for each slide, (b) text is readable and not obscured by busy backgrounds, (c) no text overflow or clipping, (d) overall quality is something you'd actually want posted. If text is hard to read on a busy background, change the `style_preset` for that slide (e.g., switch from `tiktok` to `inverted`), or apply `background_filters` to dim/blur the image, then re-render. Don't post unreadable slides.
 
 10. **Post:** Use `create-post` with media-type slideshow, or use legacy `post-draft` for TikTok drafts.
 
