@@ -11,7 +11,7 @@ metadata:
 
 # genviral Partner API Skill
 
-> **TL;DR for agents:** This skill wraps genviral's Partner API into 42+ bash commands covering all documented endpoints. Core workflow: `generate` (create slideshow from prompt) > `render` (produce images) > `review` (check quality) > `create-post` (publish). Auth via `GENVIRAL_API_KEY` env var. Config in `defaults.yaml`. New: full analytics support (summary, posts, targets, refresh). Product context in `context/`. Hook library in `hooks/`. Track results in `performance/`. The skill self-improves: post > track > analyze > adapt strategy > post better content.
+> **TL;DR for agents:** This skill wraps genviral's Partner API into 42+ bash commands covering all documented endpoints. Core workflow: `get-pack` (fetch images) > **visually inspect every image** (use vision/image tool) > `generate` with `pinned_images` (assign images to slides) > `render` (produce images) > **visually review rendered slides** > `create-post` (publish). Auth via `GENVIRAL_API_KEY` env var. Config in `defaults.yaml`. **Critical: you MUST use a vision tool to look at pack images before generating, and use `pinned_images` in `slide_config` to control which image goes on which slide.** Product context in `context/`. Hook library in `hooks/`. Track results in `performance/`.
 
 Complete automation for genviral's Partner API. Create video posts, AI-generated slideshows, manage templates and image packs, track analytics, and schedule content across any platform genviral supports (TikTok, Instagram, etc.).
 
@@ -539,25 +539,100 @@ genviral.sh get-pack --id PACK_ID
 
 ### Smart Image Selection From Packs (MANDATORY)
 
-Do not pick pack images randomly.
+**Do not skip this.** If you just pass `--pack-id` to `generate` without `pinned_images`, the server picks background images randomly from the pack. That produces incoherent slideshows. You MUST visually inspect pack images and pin them to specific slides.
 
-When a slideshow uses a pack, do this every time:
-1. Call `get-pack` and collect **all** `images[].url` entries.
-2. Visually inspect every candidate image URL with a vision-capable tool.
-3. For each slide hook/body text, choose the image that best matches that specific slide.
-4. Validate text-overlay compatibility before finalizing:
-   - Topic match: does the image clearly fit the slide claim?
-   - Overlay readability: enough clean/low-detail space for text?
-   - Contrast: will text style remain legible on this background?
-   - Visual appeal: does it look post-worthy, not generic/awkward?
-5. Avoid repeating near-identical backgrounds unless repetition is deliberate.
+#### Step-by-step (required every time a pack is used):
 
-Quick scoring rubric per candidate image (1-5 each):
-- Relevance to slide message
-- Readability with planned text
-- Visual quality/composition
+**1. Fetch all images:**
+```bash
+genviral.sh get-pack --id PACK_ID
+```
+Collect every `images[].url` from the response.
 
-Pick the highest total score, not the first/random image.
+**2. Visually analyze every image:**
+For each image URL, use a vision/image-analysis tool to actually look at it. Example (OpenClaw agents):
+```
+image(image="https://images.unsplash.com/photo-xxx?w=1080&q=80",
+      prompt="Describe this image for slideshow use: subject, composition, clean space for text overlay, readability risks.")
+```
+You can analyze multiple images in parallel. Record what each image shows (e.g., "laptop with code editor, dark background, clean space top-left").
+
+**Do not describe images from the URL alone.** The URL tells you nothing about the actual content. You must fetch and view the image.
+
+**3. Plan your slides first, then match images:**
+Before picking images, know your slide content:
+- Slide 0: Hook text
+- Slide 1: Problem/setup
+- Slide 2: Discovery/shift
+- Slide 3: Feature/proof
+- Slide 4: CTA
+
+For each slide, pick the image that best fits based on:
+- Topic match: does the image relate to the slide's message?
+- Text readability: is there enough clean/low-detail space for the text overlay?
+- Contrast: will white/bold text remain legible on this background?
+- Visual quality: would you actually want this posted?
+
+Score each candidate 1-5 on relevance, readability, and quality. Pick the highest total. Avoid repeating near-identical images across slides.
+
+**4. Build `pinned_images` and pass to generate:**
+Once you've mapped images to slides, use `pinned_images` in `slide_config` so the server uses YOUR chosen images, not random ones:
+
+```bash
+genviral.sh generate \
+  --prompt "Your slideshow prompt here" \
+  --pack-id PACK_ID \
+  --slides 5 \
+  --type educational \
+  --slide-config-json '{
+    "total_slides": 5,
+    "slide_types": ["image_pack","image_pack","image_pack","image_pack","image_pack"],
+    "pinned_images": {
+      "0": "https://images.unsplash.com/photo-HOOK-IMAGE?w=1080&q=80",
+      "1": "https://images.unsplash.com/photo-PROBLEM-IMAGE?w=1080&q=80",
+      "2": "https://images.unsplash.com/photo-DISCOVERY-IMAGE?w=1080&q=80",
+      "3": "https://images.unsplash.com/photo-FEATURE-IMAGE?w=1080&q=80",
+      "4": "https://images.unsplash.com/photo-CTA-IMAGE?w=1080&q=80"
+    }
+  }'
+```
+
+**Without `pinned_images`, your visual inspection is wasted** because the server will ignore your image preferences and pick randomly from the pack.
+
+#### Quick reference: what NOT to do
+```bash
+# BAD: server picks random images, visual inspection was pointless
+genviral.sh generate --prompt "..." --pack-id PACK_ID --slides 5
+
+# GOOD: you control which image goes on which slide
+genviral.sh generate --prompt "..." --pack-id PACK_ID --slides 5 \
+  --slide-config-json '{"total_slides":5,"slide_types":["image_pack","image_pack","image_pack","image_pack","image_pack"],"pinned_images":{"0":"URL_0","1":"URL_1","2":"URL_2","3":"URL_3","4":"URL_4"}}'
+```
+
+#### Alternative: `custom_images` approach
+Instead of `pinned_images` with `image_pack` type, you can use `custom_image` type with `custom_images` to directly assign URLs:
+```json
+{
+  "total_slides": 5,
+  "slide_types": ["custom_image","custom_image","custom_image","custom_image","custom_image"],
+  "custom_images": {
+    "0": {"image_url": "https://...", "image_name": "hook-bg"},
+    "1": {"image_url": "https://...", "image_name": "problem-bg"}
+  },
+  "slide_texts": {
+    "0": "your hook text here",
+    "1": "your problem text here"
+  }
+}
+```
+Use `custom_images` with `--skip-ai` when you want full manual control over both images AND text. Use `pinned_images` with AI generation when you want the AI to write text but you control the images.
+
+#### Text readability on busy backgrounds
+Most coding/tech images are visually busy. To keep text readable:
+- Use `--style tiktok` (white text with strong black outline) or `--style inverted` (black text on white box) for best readability
+- For very busy backgrounds, prefer `inverted` style which places text in a box
+- Apply `background_filters` via `update-slideshow` to dim images: `{"brightness": 0.5}` or `{"blur": 2}` makes text pop
+- CTA slides need clean, uncluttered backgrounds. If your pack doesn't have one, use a simple solid or gradient image
 
 ### create-pack
 Create a new pack.
@@ -855,25 +930,36 @@ This is the recommended workflow for producing posts.
 
 1. **Hook Selection:** Read `hooks/library.json` and pick a hook. Rotate through categories.
 
-2. **Pack Discovery:** Run `list-packs` to find candidate packs, then `get-pack --id ...` to fetch full `images[].url` for candidate packs.
+2. **Pack Discovery:** Run `list-packs` to find candidate packs, then `get-pack --id ...` to fetch the full `images[]` array with URLs.
 
-3. **Smart Image Selection (MANDATORY):** For each planned slide, visually inspect pack image URLs and pick the best-fit image for that slide's message. Never pick randomly. Optimize for topic fit, text readability, and visual quality.
+3. **Visually Inspect Pack Images (MANDATORY - DO NOT SKIP):**
+   For EVERY image URL in the pack, use a vision/image-analysis tool to actually look at the image. Do not guess from the URL. Record what each image shows (subject, mood, clean space for text, readability risks). See "Smart Image Selection From Packs" section above for the exact tool calls and scoring rubric.
 
-4. **Prompt Assembly:** Use the selected hook and chosen visual direction to build a full slideshow prompt. Reference `prompts/slideshow.md`.
+4. **Map Images to Slides:** Plan your 5 slides (hook, problem, shift, feature, CTA), then assign the best-matching image to each slide based on your visual analysis. Build a `pinned_images` map: `{"0": "url_for_hook", "1": "url_for_problem", ...}`.
 
-5. **Generate Slideshow:** Run `generate` with the assembled prompt and pack settings.
+5. **Prompt Assembly:** Use the selected hook and chosen visual direction to build a full slideshow prompt. Reference `prompts/slideshow.md`.
 
-6. **Review Slide Text:** Check each slide for clarity, readability, and flow. Update or regenerate weak slides.
+6. **Generate Slideshow WITH Pinned Images:** Run `generate` with your prompt, pack ID, AND `--slide-config-json` containing `pinned_images`. This ensures the server uses YOUR chosen images instead of picking randomly. Example:
+   ```bash
+   genviral.sh generate \
+     --prompt "Your prompt" \
+     --pack-id PACK_ID \
+     --slides 5 \
+     --slide-config-json '{"total_slides":5,"slide_types":["image_pack","image_pack","image_pack","image_pack","image_pack"],"pinned_images":{"0":"URL_0","1":"URL_1","2":"URL_2","3":"URL_3","4":"URL_4"}}'
+   ```
+   **Never call generate with just `--pack-id` and no `pinned_images`.** That lets the server pick random images, making your visual inspection pointless.
 
-7. **Render:** Run `render` to generate final images.
+7. **Review Slide Text:** Check each slide for clarity, readability, and flow. Update or regenerate weak slides.
 
-8. **Visual Review (MANDATORY):** Before posting, visually inspect EVERY rendered slide using an image analysis tool. Check: (a) background images are relevant to the topic and product, (b) text is readable and not obscured by busy backgrounds, (c) no text overflow or clipping, (d) overall quality is something you'd actually want posted. If any slide fails, regenerate it or swap the image. Never post without reviewing.
+8. **Render:** Run `render` to generate final images.
 
-9. **Post:** Use `create-post` with media-type slideshow, or use legacy `post-draft` for TikTok drafts.
+9. **Visual Review (MANDATORY):** Before posting, visually inspect EVERY rendered slide image using a vision/image-analysis tool. Check: (a) background images match what you intended for each slide, (b) text is readable and not obscured by busy backgrounds, (c) no text overflow or clipping, (d) overall quality is something you'd actually want posted. If any slide fails, fix the text, swap the image via `update-slideshow`, and re-render.
 
-10. **Log the Post (MANDATORY):** Immediately after posting, append an entry to `content/post-log.md` with: date, time (UTC), post ID, type (slideshow/video), hook/caption snippet, status (posted/scheduled/draft), and which pack was used. This is the single source of truth for all content output. If the file doesn't exist, create it with the header format. Never skip this step.
+10. **Post:** Use `create-post` with media-type slideshow, or use legacy `post-draft` for TikTok drafts.
 
-11. **Track Performance:** Use analytics endpoints to monitor metrics. During performance checks (evening cron), update `content/post-log.md` with view/like/comment counts for recent posts.
+11. **Log the Post (MANDATORY):** Immediately after posting, append an entry to `content/post-log.md` with: date, time (UTC), post ID, type (slideshow/video), hook/caption snippet, status (posted/scheduled/draft), and which pack was used. This is the single source of truth for all content output. If the file doesn't exist, create it with the header format. Never skip this step.
+
+12. **Track Performance:** Use analytics endpoints to monitor metrics. During performance checks (evening cron), update `content/post-log.md` with view/like/comment counts for recent posts.
 
 ### For Video Posts
 
