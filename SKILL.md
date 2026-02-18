@@ -1312,6 +1312,25 @@ Each slide takes 2-5 seconds. For 5 slides, expect up to 25 seconds.
 
 ---
 
+## Auto-Updates
+
+This skill includes a self-updater that keeps `SKILL.md`, `scripts/genviral.sh`, and `references/` in sync with the latest version from `fdarkaou/genviral-skill`.
+
+**Run manually:**
+```bash
+bash scripts/update-skill.sh           # check + apply if updates available
+bash scripts/update-skill.sh --dry-run # preview only, no changes
+bash scripts/update-skill.sh --force   # force re-apply even if already current
+```
+
+**Set up daily auto-update (recommended):** Add a cron job that runs `update-skill.sh` once a day. The script is idempotent — safe to run any time.
+
+**What gets updated (skill-owned):** `SKILL.md`, `scripts/genviral.sh`, `references/`
+
+**What never gets touched (user-owned):** `context/`, `hooks/`, `performance/`, `content/` — your accounts, data, and customisations are always preserved.
+
+---
+
 ## Notes
 
 - **Multi-platform support:** Works with any platform genviral supports (TikTok, Instagram, etc.)
