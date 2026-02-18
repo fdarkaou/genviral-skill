@@ -481,6 +481,11 @@ Use this as your source of truth when styling text overlays.
 - `text_width`: `default` (wide) or `narrow`
 - `text_preset`: style preset string (see presets below)
 
+`font_size` preset mapping used by slideshow generation:
+- `default`: title/single `48px`, body `40px`
+- `small`: title/single `40px`, body `33px` (rounded from `0.83x`)
+- Agent rule: if user says “bigger than small” without a number, use a midpoint like `44` first.
+
 **Text presets (renderer-supported):**
 - `tiktok` - White text with strong black outline/stroke, optimized for hook readability
 - `inverted` - Black text on a white text box (best when the background is busy)
