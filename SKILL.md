@@ -344,7 +344,7 @@ Options (`POST /slideshows/generate`):
 - `--aspect-ratio` -> `aspect_ratio` (`9:16`, `4:5`, `1:1`)
 - `--language` -> `language` (2-32 chars, for example `en`, `es`, `fr`)
 - `--style` / `--text-preset` -> `advanced_settings.text_preset` (string)
-- `--font-size` -> `advanced_settings.font_size` (`default` or `small`)
+- `--font-size` -> `advanced_settings.font_size` (`default`, `small`, or numeric `8-200`)
 - `--text-width` -> `advanced_settings.text_width` (`default` or `narrow`)
 - `--skip-ai` -> `skip_ai` (bool)
 - `--slide-config-json` / `--slide-config` -> `slide_config` (inline JSON)
@@ -477,7 +477,7 @@ Options:
 Use this as your source of truth when styling text overlays.
 
 **Global generation controls (`advanced_settings`):**
-- `font_size`: `default` or `small`
+- `font_size`: `default`, `small`, or numeric `8-200`
 - `text_width`: `default` (wide) or `narrow`
 - `text_preset`: style preset string (see presets below)
 

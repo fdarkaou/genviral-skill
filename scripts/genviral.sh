@@ -333,9 +333,14 @@ validate_style() {
 }
 
 validate_font_size_setting() {
-    case "$1" in
+    local value="$1"
+
+    case "$value" in
         default|small) ;;
-        *) die "font-size must be one of: default, small. Got: $1" ;;
+        *)
+            [[ "$value" =~ ^[0-9]+$ ]] || die "font-size must be default, small, or a number between 8 and 200. Got: $value"
+            (( value >= 8 && value <= 200 )) || die "font-size number must be between 8 and 200. Got: $value"
+            ;;
     esac
 }
 
@@ -1764,7 +1769,13 @@ cmd_generate() {
 
     local advanced='{}'
     [[ -n "$style" ]] && advanced="$(printf '%s' "$advanced" | jq --arg preset "$style" '. + {text_preset: $preset}')"
-    [[ -n "$font_size" ]] && advanced="$(printf '%s' "$advanced" | jq --arg fs "$font_size" '. + {font_size: $fs}')"
+    if [[ -n "$font_size" ]]; then
+        if [[ "$font_size" =~ ^[0-9]+$ ]]; then
+            advanced="$(printf '%s' "$advanced" | jq --argjson fs "$font_size" '. + {font_size: $fs}')"
+        else
+            advanced="$(printf '%s' "$advanced" | jq --arg fs "$font_size" '. + {font_size: $fs}')"
+        fi
+    fi
     [[ -n "$text_width" ]] && advanced="$(printf '%s' "$advanced" | jq --arg tw "$text_width" '. + {text_width: $tw}')"
     if [[ "$advanced" != '{}' ]]; then
         payload="$(printf '%s' "$payload" | jq --argjson advanced "$advanced" '. + {advanced_settings: $advanced}')"
