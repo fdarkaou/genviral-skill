@@ -69,7 +69,7 @@ TikTok `privacy_level` options:
 - Provide future ISO timestamp: post is scheduled (status: `scheduled`)
 - `--scheduled-at` must be ISO 8601 with timezone offset (example: `2026-02-14T19:47:00Z`)
 
-**Draft timing note:** For TikTok draft uploads (`post_mode=MEDIA_UPLOAD`), `pending` can persist for a few minutes before the account state flips to `posted`. This is normal queue latency. Check `accounts.states[].last_attempted_at` and `published_at` before concluding it failed.
+**Draft timing note:** For TikTok draft uploads (`post_mode=MEDIA_UPLOAD`), `pending` is normal. It means the post is queued and waiting for the posting worker (typically every ~5 minutes). `pending` can persist for a few minutes before the account state flips to `posted`. Check `accounts.states[].last_attempted_at` and `published_at` before concluding it failed.
 
 `--music-url` must point to a TikTok URL.
 
