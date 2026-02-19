@@ -8,6 +8,9 @@
 genviral:
   base_url: "https://www.genviral.io/api/partner/v1"
 
+# Instance data directory (relative to skill root, or set GENVIRAL_WORKSPACE_DIR env var to override)
+workspace_dir: "workspace"
+
 content:
   # Your default image pack ID (run list-packs to find it)
   default_pack_id: ""
