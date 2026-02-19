@@ -253,6 +253,8 @@ genviral.sh post-draft \
   --account-ids "account_id"
 ```
 
+Guardrail: the CLI warns near TikTok's pending-share cap and blocks at 5+ MEDIA_UPLOAD drafts in a rolling 24h window. Use `--force-media-upload-cap` only for intentional testing.
+
 ### full-pipeline
 End-to-end: generate -> render -> review -> post draft.
 

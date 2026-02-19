@@ -449,6 +449,58 @@ validate_uuid_csv() {
     (( ${#ids[@]} <= max_count )) || die "--${option_name} supports at most ${max_count} IDs (got ${#ids[@]})"
 }
 
+check_media_upload_draft_cap_guard() {
+    # Best-effort guardrail for TikTok MEDIA_UPLOAD cap.
+    # TikTok docs indicate up to ~5 pending-share uploads per 24h per creator.
+    local account_ids_csv="$1"
+    local force_override="${2:-false}"
+
+    local since_utc
+    since_utc="$(date -u -d '24 hours ago' '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || true)"
+    if [[ -z "$since_utc" ]]; then
+        # BSD/macOS fallback
+        since_utc="$(date -u -v-24H '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || true)"
+    fi
+
+    if [[ -z "$since_utc" ]]; then
+        warn "Could not compute 24h guardrail window. Skipping MEDIA_UPLOAD cap check."
+        return
+    fi
+
+    local response
+    response="$(api_call GET "/posts?limit=100&since=${since_utc}")"
+
+    local -a raw=()
+    IFS=',' read -r -a raw <<< "$account_ids_csv"
+
+    local aid count
+    for aid in "${raw[@]}"; do
+        aid="$(printf '%s' "$aid" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+        [[ -z "$aid" ]] && continue
+
+        count="$(printf '%s' "$response" | jq --arg aid "$aid" '
+            [
+                (.data.posts // [])[]
+                | select((.tiktok.post_mode // "") == "MEDIA_UPLOAD")
+                | select(any((.accounts.states // [])[]?; .account_id == $aid and ((.status == "pending") or (.status == "posted") or (.status == "retry"))))
+            ]
+            | length
+        ')"
+
+        if (( count >= 5 )); then
+            local msg
+            msg="TikTok MEDIA_UPLOAD guardrail: account ${aid} already has ${count} draft-share uploads in the last 24h. TikTok may block with spam_risk_too_many_pending_share."
+            if [[ "$force_override" == true ]]; then
+                warn "$msg Proceeding because --force-media-upload-cap was set."
+            else
+                die "$msg Refusing this upload. Retry later, or pass --force-media-upload-cap to override."
+            fi
+        elif (( count >= 4 )); then
+            warn "TikTok MEDIA_UPLOAD guardrail: account ${aid} already has ${count} draft-share uploads in the last 24h. Next upload may be blocked."
+        fi
+    done
+}
+
 require_arg() {
     local name="$1"
     local value="$2"
@@ -577,6 +629,7 @@ ${BOLD}Examples:${NC}
   genviral.sh analytics-summary --range 30d --platforms tiktok,instagram
   genviral.sh analytics-target-create --platform tiktok --identifier @brand --alias "Brand HQ"
   genviral.sh trend-brief --keyword "morning routine" --range 7d --limit 10
+  genviral.sh post-draft --id SLIDESHOW_ID --caption "Text" --account-ids "id" --force-media-upload-cap
 EOF
 }
 
@@ -758,6 +811,7 @@ cmd_create_post() {
     local tiktok_is_branded_content=""
     local tiktok_user_consent=""
     local tiktok_is_your_brand=""
+    local force_media_upload_cap=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -773,6 +827,7 @@ cmd_create_post() {
             --tiktok-description)     tiktok_description="$2"; shift 2 ;;
             --tiktok-post-mode)       tiktok_post_mode="$2"; shift 2 ;;
             --tiktok-privacy)         tiktok_privacy="$2"; shift 2 ;;
+            --force-media-upload-cap) force_media_upload_cap=true; shift ;;
             --tiktok-disable-comment)
                 tiktok_disable_comment="$(parse_boolean_flag_or_value "tiktok-disable-comment" "${2:-}")"
                 if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
@@ -853,6 +908,11 @@ cmd_create_post() {
 
     if [[ "$tiktok_post_mode" == "MEDIA_UPLOAD" && "$media_type" != "slideshow" ]]; then
         die "TikTok MEDIA_UPLOAD is only supported when media-type is slideshow."
+    fi
+
+    # TikTok MEDIA_UPLOAD guardrail (~5 pending-share uploads/24h)
+    if [[ "$tiktok_post_mode" == "MEDIA_UPLOAD" ]]; then
+        check_media_upload_draft_cap_guard "$accounts" "$force_media_upload_cap"
     fi
 
     # Build media object
@@ -2148,6 +2208,7 @@ cmd_post_draft() {
     local post_mode_override=""
     local privacy="SELF_ONLY"
     local post_mode="MEDIA_UPLOAD"
+    local force_media_upload_cap=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -2157,6 +2218,7 @@ cmd_post_draft() {
             --privacy)      privacy_override="$2"; shift 2 ;;
             --post-mode)    post_mode_override="$2"; shift 2 ;;
             --scheduled-at) scheduled_at="$2"; shift 2 ;;
+            --force-media-upload-cap) force_media_upload_cap=true; shift ;;
             *) die "Unknown option: $1" ;;
         esac
     done
@@ -2225,6 +2287,8 @@ cmd_post_draft() {
         }
         + (if $scheduled_at != "" then { scheduled_at: $scheduled_at } else {} end)
     ')"
+
+    check_media_upload_draft_cap_guard "$account_ids" "$force_media_upload_cap"
 
     info "Posting as draft (SELF_ONLY + MEDIA_UPLOAD)..."
 

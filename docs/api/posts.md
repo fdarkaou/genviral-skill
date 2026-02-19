@@ -71,6 +71,11 @@ TikTok `privacy_level` options:
 
 **Draft timing note:** For TikTok draft uploads (`post_mode=MEDIA_UPLOAD`), `pending` is normal. It means the post is queued and waiting for the posting worker (typically every ~5 minutes). `pending` can persist for a few minutes before the account state flips to `posted`. Check `accounts.states[].last_attempted_at` and `published_at` before concluding it failed.
 
+**Draft cap guardrail:** TikTok may reject draft uploads with `spam_risk_too_many_pending_share` when you exceed ~5 pending-share uploads in a rolling 24h window. The CLI now enforces a guardrail:
+- Warn at 4 uploads in last 24h per account
+- Block at 5+ by default
+- Override only if you really need to test: `--force-media-upload-cap` (supported in `create-post` and `post-draft`)
+
 `--music-url` must point to a TikTok URL.
 
 **Multi-account posting:**
