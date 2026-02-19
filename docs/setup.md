@@ -29,7 +29,7 @@ Ask these questions naturally (not all at once -- let it be a conversation):
 - "Do you have any social media presence already? What's worked before, if anything?"
 - "What's the website or app store link?"
 
-As they answer, fill in `context/product.md` and `context/brand-voice.md`. You are building the foundation that every piece of content will reference.
+As they answer, fill in `workspace/context/product.md` and `workspace/context/brand-voice.md`. You are building the foundation that every piece of content will reference.
 
 Do not rush this phase. A weak product brief produces weak content. A good one makes everything downstream easier.
 
@@ -37,7 +37,7 @@ Do not rush this phase. A weak product brief produces weak content. A good one m
 
 Before creating any content, understand the competitive landscape. This takes 15-20 minutes and saves weeks of guessing.
 
-Read `references/competitor-research.md` for the full process. The short version:
+Read `docs/references/competitor-research.md` for the full process. The short version:
 
 1. Ask: "Who else is making content for this niche? Any accounts you admire or follow?"
 2. Use the browser tool to search TikTok (and Instagram if relevant) for the niche keywords
@@ -45,7 +45,7 @@ Read `references/competitor-research.md` for the full process. The short version
 4. Analyze their top content: what hooks work, what formats dominate, what view baseline looks like
 5. Identify gaps: what is nobody doing?
 
-Save findings to `performance/competitor-insights.md`.
+Save findings to `workspace/performance/competitor-insights.md`.
 
 Tell your human what you found: "In this niche, most content uses relatable-pain hooks and talking-head videos. Nobody is doing educational slideshows. That is our opening."
 
@@ -99,8 +99,8 @@ posting:
 
 Make the first post together. This is iterative -- do not aim for perfect on the first try.
 
-1. Pick a hook from `hooks/library.json` or brainstorm one based on competitor research
-2. Pick a template from `prompts/slideshow.md`
+1. Pick a hook from `workspace/hooks/library.json` or brainstorm one based on competitor research
+2. Pick a template from `docs/prompts/slideshow.md`
 3. Generate the slideshow, review the slides together, refine until it looks right
 4. Post as a TikTok draft (so they can add trending audio before publishing)
 
@@ -110,7 +110,7 @@ genviral.sh render --id SLIDESHOW_ID
 genviral.sh create-post --caption "your caption" --media-type slideshow --media-urls "url1,url2,..." --accounts ACCOUNT_ID --tiktok-post-mode MEDIA_UPLOAD --tiktok-privacy SELF_ONLY
 ```
 
-After posting, log the hook text, category, and CTA to `performance/hook-tracker.json`. This is the start of the feedback loop.
+After posting, log the hook text, category, and CTA to `workspace/performance/hook-tracker.json`. This is the start of the feedback loop.
 
 Remind them: for TikTok, posting as a draft lets them add trending music before publishing. That is usually the best workflow.
 
@@ -121,8 +121,8 @@ The skill gets smarter over time, but only if you actually track results.
 After the first post goes live (give it 48-72 hours minimum before checking):
 
 1. Pull analytics: `genviral.sh analytics-posts --range 7d --sort-by views --sort-order desc`
-2. Update `performance/hook-tracker.json` with the actual view and engagement numbers
-3. Apply the diagnostic framework (see `references/analytics-loop.md`)
+2. Update `workspace/performance/hook-tracker.json` with the actual view and engagement numbers
+3. Apply the diagnostic framework (see `docs/references/analytics-loop.md`)
 4. Set up a weekly review routine -- every Monday, check the previous week's posts and adjust the content plan
 
 Explain this to your human:
@@ -154,9 +154,9 @@ Tell your human: "A new account that starts posting immediately gets worse distr
 ## What's Next?
 
 Once they are posting, the agent can:
-- Set up a daily content cron (see `cron-setup.md`)
-- Track performance via analytics and update `performance/hook-tracker.json`
-- Run weekly strategy reviews (see `references/analytics-loop.md`)
+- Set up a daily content cron (see **Cron Setup** section below)
+- Track performance via analytics and update `workspace/performance/hook-tracker.json`
+- Run weekly strategy reviews (see `docs/references/analytics-loop.md`)
 - Build and refine the hook library based on what actually works
 - Research competitors periodically to stay ahead of niche trends
 
@@ -175,3 +175,69 @@ Be helpful, not overwhelming. Do not dump all 42 commands on them. The conversat
 5. "Here's how we'll track what works."
 
 That's it. Everything else comes naturally as they use the skill.
+
+---
+
+## Cron Setup
+
+Automate the content pipeline with OpenClaw cron jobs so content gets generated, posted, and reviewed without manual intervention.
+
+### Recommended Schedule
+
+| Job | Frequency | What it does |
+|-----|-----------|-------------|
+| **Daily Content** | Every day at 9:00 AM | Generate, render, review, and post a slideshow |
+| **Performance Check** | Every day at 6:00 PM | Pull analytics, log metrics for recent posts |
+| **Weekly Review** | Every Sunday at 10:00 AM | Analyze the week, update hook weights, plan next week |
+
+### 1. Daily Content Generation
+
+Replace `YOUR_TIMEZONE` (e.g. `Europe/Brussels`, `America/New_York`).
+
+```bash
+openclaw cron add \
+  --name "Genviral: Daily Content" \
+  --cron "0 9 * * *" \
+  --tz "YOUR_TIMEZONE" \
+  --session isolated \
+  --message "Run the Genviral daily content pipeline. Read the genviral SKILL.md, then: 1) Pick a topic from workspace/content/scratchpad.md or generate a new one based on workspace/performance/insights.md. 2) Generate a slideshow with a strong hook using pinned_images. 3) Render all slides. 4) Review each slide visually — if any slide is below quality, fix it before continuing. 5) Post to the default account. 6) Log the post in workspace/performance/log.json and tag the hook in workspace/performance/hook-tracker.json." \
+  --announce
+```
+
+### 2. Daily Performance Check
+
+```bash
+openclaw cron add \
+  --name "Genviral: Performance Check" \
+  --cron "0 18 * * *" \
+  --tz "YOUR_TIMEZONE" \
+  --session isolated \
+  --message "Run the Genviral performance check. Read the genviral SKILL.md, then: 1) Run analytics-summary to get overall stats. 2) Run analytics-posts to get individual post metrics. 3) Update workspace/performance/log.json with latest metrics for posts older than 24h. 4) Update workspace/performance/hook-tracker.json with real view/engagement numbers. 5) If any post significantly outperformed or underperformed, note why in workspace/performance/insights.md. 6) Report a brief summary." \
+  --announce
+```
+
+### 3. Weekly Strategy Review
+
+```bash
+openclaw cron add \
+  --name "Genviral: Weekly Review" \
+  --cron "0 10 * * 0" \
+  --tz "YOUR_TIMEZONE" \
+  --session isolated \
+  --message "Run the Genviral weekly review. Read the genviral SKILL.md, then: 1) Analyze all posts from the past 7 days in workspace/performance/log.json. 2) Identify top 3 and bottom 3 performers. 3) Update hook weights in workspace/hooks/library.json (increase for high engagement, decrease for underperformers). 4) Update workspace/performance/insights.md with this week's learnings. 5) Generate 5 new content ideas for next week in workspace/content/scratchpad.md. 6) Write the weekly review in workspace/performance/weekly-review.md." \
+  --announce
+```
+
+### Customization
+
+- **2 posts/day:** Change daily cron to `0 9,15 * * *` (9 AM and 3 PM)
+- **Platform targeting:** Add platform-specific instructions to the message (e.g. "Post to TikTok vertical format" or "Instagram 4:5")
+- **Content themes:** Add a theme schedule to `workspace/content/calendar.json` and reference it in the daily message
+
+### Verify Setup
+
+```bash
+openclaw cron list                    # list all jobs
+openclaw cron run <job-id> --force    # test a job manually
+openclaw cron runs --id <job-id>      # check run history
+```
