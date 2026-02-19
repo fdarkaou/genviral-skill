@@ -37,7 +37,7 @@ All configuration in `defaults.yaml`. Secrets via environment variables. Everyth
 
 ## First-Time Setup
 
-If fresh install, read `setup.md` and walk the user through onboarding conversationally:
+If fresh install, read `docs/setup.md` and walk the user through onboarding conversationally:
 1. Set API key and verify it works
 2. List accounts and pick which to post to
 3. Discuss image strategy (existing packs, create new, generate per post, or mix)
@@ -50,10 +50,11 @@ No hardcoded defaults. Ask the user what they prefer and adapt. Everything done 
 ```
 genviral/
   SKILL.md                  # This file (kernel + routing)
-  setup.md                  # Onboarding guide
+  README.md                 # Human-facing overview
   defaults.yaml             # API config and defaults
 
   docs/
+    setup.md                # Onboarding guide (conversational, 5 phases)
     api/
       accounts-files.md     # accounts, upload, list-files
       posts.md              # create-post, update-post, retry, list, get, delete
@@ -63,6 +64,12 @@ genviral/
       analytics.md          # all analytics commands
       pipeline.md           # content pipeline, performance loop, CTA testing, platform tips
       errors.md             # error codes and troubleshooting
+    references/
+      analytics-loop.md     # Full analytics feedback loop and weekly review process
+      competitor-research.md # How to research competitors
+    prompts/
+      slideshow.md          # Prompt templates for slideshow generation
+      hooks.md              # Prompt templates for hook brainstorming
 
   workspace/                # All instance/customer data (override with GENVIRAL_WORKSPACE_DIR)
     content/
@@ -82,16 +89,9 @@ genviral/
       weekly-review.md      # Weekly review notes
       competitor-insights.md # Competitor research findings
 
-  references/
-    competitor-research.md  # How to research competitors
-    analytics-loop.md       # Full analytics feedback loop and weekly review process
-
   scripts/
     genviral.sh             # Main API wrapper (all commands)
-
-  prompts/
-    slideshow.md            # Prompt templates for slideshow generation
-    hooks.md                # Prompt templates for hook brainstorming
+    update-skill.sh         # Self-updater
 ```
 
 ## Command Routing
@@ -143,7 +143,7 @@ bash scripts/update-skill.sh --dry-run # preview only, no changes
 bash scripts/update-skill.sh --force   # force re-apply even if already current
 ```
 
-**What gets updated (skill-owned):** `SKILL.md`, `setup.md`, `scripts/`, `references/`, `docs/api/`
+**What gets updated (skill-owned):** `SKILL.md`, `scripts/`, `docs/` (all subdirs)
 
 **What never gets touched (user-owned):** `workspace/` — your data, context, hooks, and performance logs are always preserved.
 

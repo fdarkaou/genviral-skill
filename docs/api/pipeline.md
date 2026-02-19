@@ -28,7 +28,7 @@ Read each image's AI metadata (`description`, `keywords`) from the `get-pack` re
 Assign best-matching image to each slide. Build a `pinned_images` map.
 
 ### 5. Prompt Assembly
-Use the selected hook and visual direction to build a slideshow prompt. Reference `workspace/content/scratchpad.md` and `prompts/slideshow.md`.
+Use the selected hook and visual direction to build a slideshow prompt. Reference `workspace/content/scratchpad.md` and `docs/prompts/slideshow.md`.
 
 ### 6. Generate WITH Pinned Images
 ```bash
@@ -125,7 +125,7 @@ genviral.sh analytics-posts --range 7d --sort-by views --sort-order desc --json
 Match posts to hook-tracker entries by `post_id`. Update metrics, set `last_checked` to now, set `status` to `tracking`.
 
 ### 14. Weekly Review (every Monday)
-Pull analytics, apply diagnostic framework, categorize hooks, write summary in `workspace/performance/weekly-review.md`. See `references/analytics-loop.md`.
+Pull analytics, apply diagnostic framework, categorize hooks, write summary in `workspace/performance/weekly-review.md`. See `docs/references/analytics-loop.md`.
 
 ---
 
@@ -145,7 +145,7 @@ Pull analytics, apply diagnostic framework, categorize hooks, write summary in `
 - `workspace/performance/hook-tracker.json` - hook/CTA tracking with metrics
 - `workspace/performance/insights.md` - agent learnings
 - `workspace/performance/weekly-review.md` - weekly review notes
-- `references/analytics-loop.md` - full analytics reference
+- `docs/references/analytics-loop.md` - full analytics reference
 
 ### The Diagnostic Framework
 
@@ -183,7 +183,7 @@ Once you have views and engagement rate (likes + comments + shares + saves / vie
 
 After 4+ weeks of data, patterns become clear. Before that, keep posting a variety of hook categories to build the sample size.
 
-See `references/analytics-loop.md` for the full weekly review process and template.
+See `docs/references/analytics-loop.md` for the full weekly review process and template.
 
 ---
 
