@@ -2,8 +2,8 @@
 
 Use these templates when generating slideshows via the genviral API. Before using any template:
 
-1. Read `context/product.md` to know the product, features, and audience.
-2. Read `context/brand-voice.md` to match the correct tone.
+1. Read `workspace/context/product.md` to know the product, features, and audience.
+2. Read `workspace/context/brand-voice.md` to match the correct tone.
 3. Replace ALL placeholders with product-specific content. Never send placeholders to the API.
 
 ## Mandatory Pack Image Selection Workflow
@@ -197,7 +197,7 @@ These rules apply to every prompt sent to the genviral API:
 
 1. **Include the exact hook text in slide 1.** Do not let the AI rephrase your hook. The hook is deliberate and tested.
 
-2. **Set the tone explicitly.** Include a phrase like "casual, conversational, like talking to a friend" to prevent corporate-sounding output. Match `context/brand-voice.md`.
+2. **Set the tone explicitly.** Include a phrase like "casual, conversational, like talking to a friend" to prevent corporate-sounding output. Match `workspace/context/brand-voice.md`.
 
 3. **Cap the word count.** Always include "Max 15 words per slide" or similar constraint.
 
@@ -213,4 +213,4 @@ These rules apply to every prompt sent to the genviral API:
 
 9. **No em-dashes.** Instruct the AI explicitly: "Do not use em-dashes."
 
-10. **Track the hook you use.** After posting, log the hook text, hook category, and CTA to `performance/hook-tracker.json`. The tracker is how you learn what actually works. If you never log hooks, you are flying blind -- you will repeat failed hooks and underuse winners. See `references/analytics-loop.md` for the full process.
+10. **Track the hook you use.** After posting, log the hook text, hook category, and CTA to `workspace/performance/hook-tracker.json`. The tracker is how you learn what actually works. If you never log hooks, you are flying blind -- you will repeat failed hooks and underuse winners. See `docs/references/analytics-loop.md` for the full process.

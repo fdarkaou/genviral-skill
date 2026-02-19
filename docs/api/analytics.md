@@ -68,6 +68,8 @@ genviral.sh analytics-target-create --platform instagram --identifier @brand --a
 
 Options: `--platform` (tiktok/instagram/youtube, required), `--identifier` (required), `--alias`
 
+**Propagation note:** New targets are not always queryable instantly. Wait ~30-90 seconds after `analytics-target-create` before expecting full data population in summary/posts endpoints.
+
 ---
 
 ## analytics-target
@@ -105,6 +107,8 @@ genviral.sh analytics-target-refresh --id TARGET_ID
 ```
 
 Returns: refresh ID, status, `wasFree`.
+
+**Freshness note:** A refresh is asynchronous. After triggering `analytics-target-refresh`, wait ~30-90 seconds, then poll `analytics-refresh --id REFRESH_ID` until `status=completed` before trusting the updated numbers.
 
 ---
 

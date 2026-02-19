@@ -1,6 +1,6 @@
 # Analytics Feedback Loop
 
-The genviral skill has full analytics built in. Use it. This document explains how to pull data, cross-reference it with `performance/hook-tracker.json`, and make decisions that improve content over time.
+The genviral skill has full analytics built in. Use it. This document explains how to pull data, cross-reference it with `workspace/performance/hook-tracker.json`, and make decisions that improve content over time.
 
 ---
 
@@ -35,7 +35,7 @@ Use this to see individual post performance. Sort by views descending to immedia
 
 The output gives you per-post: views, likes, comments, shares, saves, and published timestamp.
 
-Cross-reference the post IDs here with entries in `performance/hook-tracker.json` to connect metrics back to the specific hook, hook category, and CTA used.
+Cross-reference the post IDs here with entries in `workspace/performance/hook-tracker.json` to connect metrics back to the specific hook, hook category, and CTA used.
 
 ---
 
@@ -56,7 +56,7 @@ Save or parse the output. For each post, note:
 
 **Step 2: Match to hook-tracker**
 
-Open `performance/hook-tracker.json`. Find each post by `post_id`. Update the `metrics` block:
+Open `workspace/performance/hook-tracker.json`. Find each post by `post_id`. Update the `metrics` block:
 ```json
 {
   "views": 47200,
@@ -119,7 +119,7 @@ Note: "twice" means you tested this hook category or specific hook type in two s
 
 ## Updating hook-tracker.json
 
-After reviewing a post's metrics, update its entry in `performance/hook-tracker.json`:
+After reviewing a post's metrics, update its entry in `workspace/performance/hook-tracker.json`:
 
 1. Fill in the `metrics` block with current data
 2. Set `status` to `reviewed`
@@ -172,10 +172,10 @@ Based on the data:
 - Make 3 variations of any hook that crossed 50K
 - Rotate CTAs for hooks in the testing range to find what converts
 - If a category has 3+ posts in `dropped`, stop testing it for now
-- Reference `performance/competitor-insights.md` for niche context
+- Reference `workspace/performance/competitor-insights.md` for niche context
 
 **7. Write a brief review**
-Append to `performance/weekly-review.md`:
+Append to `workspace/performance/weekly-review.md`:
 ```markdown
 ## Week of [DATE]
 

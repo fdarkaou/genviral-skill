@@ -3,10 +3,10 @@
 These are prompts the agent uses to generate batches of new hooks. Each prompt is designed to produce 5 to 10 hooks at once for a specific formula category.
 
 Before using any prompt:
-1. Read `context/product.md` for the product, features, and audience.
-2. Read `context/brand-voice.md` for the tone and style.
-3. Read `hooks/formulas.md` for the formula patterns.
-4. Read `performance/insights.md` for what has worked and what has not.
+1. Read `workspace/context/product.md` for the product, features, and audience.
+2. Read `workspace/context/brand-voice.md` for the tone and style.
+3. Read `workspace/hooks/formulas.md` for the formula patterns.
+4. Read `workspace/performance/insights.md` for what has worked and what has not.
 
 Replace ALL placeholders before using.
 
@@ -182,7 +182,7 @@ Underperforming hooks (avoid these patterns):
 [LIST BOTTOM 3-5 HOOKS WITH THEIR VIEW COUNTS]
 
 Analysis of what works:
-[INSIGHTS FROM performance/insights.md]
+[INSIGHTS FROM workspace/performance/insights.md]
 
 Generate 10 new hooks:
 - 4 using the Person + Conflict formula (varied from winners)
@@ -211,7 +211,7 @@ For each hook, provide:
 ## Usage Notes
 
 - Generate hooks in batches of 5 to 10 at a time for efficiency.
-- Always review generated hooks against the quality criteria in `hooks/formulas.md` before adding to the library.
+- Always review generated hooks against the quality criteria in `workspace/hooks/formulas.md` before adding to the library.
 - Present the top candidates to the user for feedback before finalizing.
-- Track which prompts produce the best hooks over time and note it in `performance/insights.md`.
+- Track which prompts produce the best hooks over time and note it in `workspace/performance/insights.md`.
 - Refresh the library weekly. Target 20 to 40 active hooks at all times.

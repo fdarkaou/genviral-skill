@@ -255,3 +255,13 @@ openclaw cron list                    # list all jobs
 openclaw cron run <job-id> --force    # test a job manually
 openclaw cron runs --id <job-id>      # check run history
 ```
+
+
+## Without OpenClaw
+
+If you're using the skill outside OpenClaw, you can still automate with system cron jobs or any scheduler/orchestrator:
+
+- Run `scripts/genviral.sh` commands directly in your own cron jobs
+- Or run an agent runner with the same prompts used above
+- Keep the same guardrails: pinned_images, visual review gate, and performance logging in `workspace/performance/log.json`
+

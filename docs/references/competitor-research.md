@@ -19,7 +19,7 @@ This is not optional busywork. If you skip it, you are guessing. Niche context t
 
 Before searching, nail down what niche you are searching in.
 
-Pull from `context/product.md`:
+Pull from `workspace/context/product.md`:
 - What problem does the product solve?
 - Who is the target audience?
 - What would someone search for if they had this problem?
@@ -114,7 +114,7 @@ Write down 2-3 specific gaps you can exploit.
 
 ## Step 5: Save Findings
 
-Save competitor research to `performance/competitor-insights.md`.
+Save competitor research to `workspace/performance/competitor-insights.md`.
 
 Use this structure:
 
@@ -167,13 +167,13 @@ Last updated: [DATE]
 
 ## Step 6: Use Competitor Data When Creating Content
 
-Every time you write a hook, check `performance/competitor-insights.md` first:
+Every time you write a hook, check `workspace/performance/competitor-insights.md` first:
 
 - Is this hook category already saturated in the niche?
 - What view baseline should I expect for this format?
 - Am I targeting a gap, or imitating what everyone else does?
 
-When picking a hook from `hooks/library.json`, prefer hooks that fill a gap over hooks that replicate what competitors already do.
+When picking a hook from `workspace/hooks/library.json`, prefer hooks that fill a gap over hooks that replicate what competitors already do.
 
 When writing prompts for slideshow generation, mention the competitive context:
 > "Competitors in this niche mostly use relatable-pain hooks. This slideshow should use a before-after format to stand out."
