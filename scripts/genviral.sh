@@ -70,6 +70,10 @@
 #   get-analytics-workspace-suggestions
 #                                  Alias for analytics-workspace-suggestions
 #
+# Trends Commands:
+#   trend-brief                    Get one-call TikTok trend brief for a keyword
+#   get-trend-brief                Alias for trend-brief
+#
 # Pipeline:
 #   post-draft                      Post rendered slideshow as draft (legacy TikTok-focused)
 #   full-pipeline                   End-to-end: generate -> render -> review -> post draft
@@ -550,6 +554,9 @@ ${BOLD}Analytics Commands:${NC}
   analytics-workspace-suggestions | get-analytics-workspace-suggestions
                                   GET /analytics/workspace-suggestions
 
+${BOLD}Trends Commands:${NC}
+  trend-brief | get-trend-brief   GET /trends/brief
+
 ${BOLD}Pipeline (Legacy):${NC}
   post-draft                      Post rendered slideshow as TikTok draft
   full-pipeline                   generate -> render -> review -> post draft
@@ -569,6 +576,7 @@ ${BOLD}Examples:${NC}
   genviral.sh update-slideshow --id SLIDESHOW_ID --status draft --settings-json '{"aspect_ratio":"9:16"}'
   genviral.sh analytics-summary --range 30d --platforms tiktok,instagram
   genviral.sh analytics-target-create --platform tiktok --identifier @brand --alias "Brand HQ"
+  genviral.sh trend-brief --keyword "morning routine" --range 7d --limit 10
 EOF
 }
 
@@ -2769,6 +2777,80 @@ cmd_analytics_workspace_suggestions() {
 }
 
 # ---------------------------------------------------------------------------
+# trend-brief (GET)
+# ---------------------------------------------------------------------------
+cmd_trend_brief() {
+    local platform="tiktok"
+    local keyword=""
+    local limit="10"
+    local range="7d"
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --platform) platform="$2"; shift 2 ;;
+            --keyword)  keyword="$2"; shift 2 ;;
+            --limit)    limit="$2"; shift 2 ;;
+            --range)    range="$2"; shift 2 ;;
+            --json)     json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "keyword" "$keyword"
+
+    if [[ "$platform" != "tiktok" ]]; then
+        die "platform currently supports only: tiktok"
+    fi
+
+    [[ "$limit" =~ ^[0-9]+$ ]] || die "limit must be an integer"
+    (( limit >= 1 && limit <= 30 )) || die "limit must be between 1 and 30"
+
+    case "$range" in
+        24h|7d|30d) ;;
+        *) die "range must be one of: 24h, 7d, 30d" ;;
+    esac
+
+    local platform_enc keyword_enc range_enc
+    platform_enc="$(jq -rn --arg v "$platform" '$v|@uri')"
+    keyword_enc="$(jq -rn --arg v "$keyword" '$v|@uri')"
+    range_enc="$(jq -rn --arg v "$range" '$v|@uri')"
+
+    local endpoint="/trends/brief?platform=${platform_enc}&keyword=${keyword_enc}&limit=${limit}&range=${range_enc}"
+
+    info "Fetching trend brief for '${keyword}' (${range})..."
+    local response
+    response="$(api_call GET "$endpoint")"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data'
+        return
+    fi
+
+    local generated_at analyzed_count
+    generated_at="$(printf '%s' "$response" | jq -r '.data.generated_at // ""')"
+    analyzed_count="$(printf '%s' "$response" | jq -r '.data.summary.analyzed_video_count // 0')"
+
+    ok "Trend brief retrieved"
+    step "  Platform: $platform"
+    step "  Keyword:  $keyword"
+    step "  Range:    $range"
+    [[ -n "$generated_at" ]] && step "  Generated: $generated_at"
+    step "  Videos analyzed: $analyzed_count"
+
+    echo ""
+    echo "Top hashtags:" >&2
+    printf '%s' "$response" | jq -r '.data.summary.top_hashtags // [] | .[] | "  #\(.hashtag) (videos: \(.videos_count // 0), avg views: \(.avg_views // 0))"' >&2
+
+    echo ""
+    echo "Recommended hooks:" >&2
+    printf '%s' "$response" | jq -r '.data.recommendations.hook_angles // [] | .[] | "  - \(.)"' >&2
+
+    echo ""
+    printf '%s' "$response" | jq '.data'
+}
+
+# ---------------------------------------------------------------------------
 # full-pipeline (legacy TikTok-focused command)
 # ---------------------------------------------------------------------------
 cmd_full_pipeline() {
@@ -2989,6 +3071,9 @@ case "$COMMAND" in
                                       check_auth; cmd_analytics_refresh_get "$@" ;;
     analytics-workspace-suggestions|get-analytics-workspace-suggestions)
                                       check_auth; cmd_analytics_workspace_suggestions "$@" ;;
+
+    # Trends Commands
+    trend-brief|get-trend-brief)      check_auth; cmd_trend_brief "$@" ;;
 
     # Legacy Pipeline Commands
     post-draft)                       check_auth; cmd_post_draft "$@" ;;

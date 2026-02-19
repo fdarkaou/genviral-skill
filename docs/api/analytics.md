@@ -131,3 +131,30 @@ genviral.sh analytics-workspace-suggestions
 genviral.sh get-analytics-workspace-suggestions
 genviral.sh analytics-workspace-suggestions --json
 ```
+
+---
+
+## trend-brief (alias: `get-trend-brief`)
+Generate a one-call TikTok trend brief for a keyword (hashtags, sounds, creators, posting windows, hook angles, and sample videos).
+
+```bash
+genviral.sh trend-brief --keyword "morning routine"
+genviral.sh trend-brief --keyword "fitness" --range 24h --limit 15
+genviral.sh get-trend-brief --keyword "grwm" --range 30d --json
+```
+
+Options:
+- `--platform` - currently only `tiktok` (default)
+- `--keyword` - required trend query seed
+- `--limit` - number of returned sample videos (`1..30`, default `10`)
+- `--range` - `24h`, `7d`, or `30d` (default `7d`)
+- `--json` - print only the `.data` payload
+
+Returns:
+- `summary.top_hashtags`, `summary.top_sounds`, `summary.top_creators`, `summary.posting_windows_utc`
+- `recommendations.hook_angles`, `recommendations.hashtags`, `recommendations.sounds`
+- `evidence.sample_videos`
+
+Caching:
+- Cached for ~3 hours by `platform + keyword + range`
+- `limit` changes only `evidence.sample_videos` length in the final response

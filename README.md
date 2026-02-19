@@ -130,7 +130,7 @@ genviral/
 | **Slideshows** | `generate`, `render`, `review`, `update`, `regenerate-slide`, `duplicate`, `delete`, `list-slideshows` |
 | **Packs** | `list-packs`, `get-pack`, `create-pack`, `update-pack`, `delete-pack`, `add-pack-image`, `delete-pack-image` |
 | **Templates** | `list-templates`, `get-template`, `create-template`, `update-template`, `delete-template`, `create-template-from-slideshow` |
-| **Analytics** | `analytics-summary`, `analytics-posts`, `analytics-targets`, `analytics-target-create`, `analytics-target-refresh`, `analytics-refresh`, `analytics-workspace-suggestions` |
+| **Analytics & Trends** | `analytics-summary`, `analytics-posts`, `analytics-targets`, `analytics-target-create`, `analytics-target-refresh`, `analytics-refresh`, `analytics-workspace-suggestions`, `trend-brief` |
 
 ```bash
 ./scripts/genviral.sh help  # full command list
@@ -146,7 +146,7 @@ bash scripts/update-skill.sh --dry-run # preview only, no changes
 bash scripts/update-skill.sh --force   # force re-apply even if already current
 ```
 
-**Skill-owned (updated automatically):** `SKILL.md`, `setup.md`, `scripts/`, `references/`, `docs/api/`
+**Skill-owned (updated automatically):** `SKILL.md`, `scripts/`, `docs/` (all subdirs)
 
 **User-owned (never touched):** `workspace/` — your product context, hooks, performance logs, and content data are always preserved.
 
