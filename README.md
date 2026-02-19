@@ -37,6 +37,9 @@ export GENVIRAL_API_KEY="your_public_id.your_secret"
 # See what accounts you have
 ./scripts/genviral.sh accounts
 
+# Pull niche intelligence in one call
+./scripts/genviral.sh trend-brief --keyword "indie hacker" --range 7d --limit 10
+
 # List image packs
 ./scripts/genviral.sh list-packs
 

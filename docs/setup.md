@@ -39,11 +39,12 @@ Before creating any content, understand the competitive landscape. This takes 15
 
 Read `docs/references/competitor-research.md` for the full process. The short version:
 
-1. Ask: "Who else is making content for this niche? Any accounts you admire or follow?"
-2. Use the browser tool to search TikTok (and Instagram if relevant) for the niche keywords
-3. Find 3-5 accounts posting in this space
-4. Analyze their top content: what hooks work, what formats dominate, what view baseline looks like
-5. Identify gaps: what is nobody doing?
+1. Run `genviral.sh trend-brief --keyword "NICHE" --range 7d --limit 10` (and optionally `24h`) for fast niche intelligence.
+2. Ask: "Who else is making content for this niche? Any accounts you admire or follow?"
+3. Use the browser tool to search TikTok (and Instagram if relevant) for the niche keywords.
+4. Find 3-5 accounts posting in this space.
+5. Analyze their top content: what hooks work, what formats dominate, what view baseline looks like.
+6. Identify gaps: what is nobody doing?
 
 Save findings to `workspace/performance/competitor-insights.md`.
 

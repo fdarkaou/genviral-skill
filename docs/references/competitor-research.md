@@ -15,6 +15,24 @@ This is not optional busywork. If you skip it, you are guessing. Niche context t
 
 ---
 
+## Step 0: Pull a Trend Brief First (Fast Signal)
+
+Before manual competitor browsing, run trend brief for the niche keyword:
+
+```bash
+genviral.sh trend-brief --keyword "YOUR NICHE" --range 7d --limit 10
+genviral.sh trend-brief --keyword "YOUR NICHE" --range 24h --limit 10
+```
+
+Capture these signals as your starting baseline:
+- `summary.top_hashtags`
+- `summary.top_sounds`
+- `summary.top_creators`
+- `summary.posting_windows_utc`
+- `recommendations.hook_angles`
+
+This gives instant niche intelligence so your manual deep-dive is focused instead of random.
+
 ## Step 1: Define the Niche Keywords
 
 Before searching, nail down what niche you are searching in.
@@ -126,6 +144,13 @@ Last updated: [DATE]
 ## Niche Keywords Searched
 - [keyword 1]
 - [keyword 2]
+
+## Trend Brief Snapshot
+- Top hashtags: [list]
+- Top sounds: [list]
+- Top creators: [list]
+- Best posting windows (UTC): [list]
+- Recommended hook angles: [list]
 
 ## Competitors Analyzed
 

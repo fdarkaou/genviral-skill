@@ -21,6 +21,7 @@ metadata:
 - **Template System:** Reusable slideshow structures, convert winners to templates
 - **Pack Management:** Image packs as slideshow backgrounds
 - **Analytics:** KPIs, post-level metrics, tracked accounts, refresh triggers
+- **Niche Intelligence:** One-call trend research (`trend-brief`) for hashtags, sounds, creators, posting windows, and hook angles
 - **Content Pipeline:** Full automation from prompt to posted content
 - **Performance Tracking:** Post log, hook tracking, weekly review
 - **Hook Library:** Maintain and evolve a library of proven content hooks
@@ -106,8 +107,24 @@ Load only what you need for the current task:
 | Pack management, image selection (ANY pack workflow) | `docs/api/packs.md` |
 | Template creation and management | `docs/api/templates.md` |
 | Analytics queries and target management | `docs/api/analytics.md` |
+| Research a specific niche quickly (trend + competitors + hooks) | `docs/api/analytics.md`, `docs/references/competitor-research.md`, `docs/prompts/hooks.md` |
 | Full content pipeline, performance loop, CTA testing | `docs/api/pipeline.md` |
 | Error codes, troubleshooting | `docs/api/errors.md` |
+
+## Niche Research Mode (When user asks to research a niche)
+
+When asked things like "research this niche", "find what works in this niche", or "give me niche intelligence":
+
+1. Run `trend-brief` first for the niche keyword (`7d` baseline, then `24h` for freshness if needed).
+2. Extract and report: top hashtags, top sounds, top creators, posting windows (UTC), recommended hook angles.
+3. Run competitor deep-dive using `docs/references/competitor-research.md` (3-5 accounts minimum).
+4. Produce a short actionable output with:
+   - 3 hook angles to test
+   - 2 CTA suggestions
+   - 2 best posting windows
+   - 5 hashtags to start with
+   - 1 "gap to exploit" insight
+5. Save findings to `workspace/performance/competitor-insights.md` and use them in subsequent content prompts.
 
 ## Non-Negotiable Rules
 

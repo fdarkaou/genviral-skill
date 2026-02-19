@@ -158,3 +158,22 @@ Returns:
 Caching:
 - Cached for ~3 hours by `platform + keyword + range`
 - `limit` changes only `evidence.sample_videos` length in the final response
+
+### Niche Research Playbook (fast)
+
+Use this when asked to "research a niche":
+
+```bash
+# 1) Baseline trend picture
+genviral.sh trend-brief --keyword "YOUR NICHE" --range 7d --limit 10
+
+# 2) Fresh momentum check
+genviral.sh trend-brief --keyword "YOUR NICHE" --range 24h --limit 10
+```
+
+Then combine with competitor deep-dive (`docs/references/competitor-research.md`) and output:
+- top 5 hashtags
+- top 3 sounds
+- 2 best posting windows (UTC)
+- 3 hook angles to test
+- 1 gap competitors are missing
