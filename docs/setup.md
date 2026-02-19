@@ -190,6 +190,20 @@ Automate the content pipeline with OpenClaw cron jobs so content gets generated,
 | **Performance Check** | Every day at 6:00 PM | Pull analytics, log metrics for recent posts |
 | **Weekly Review** | Every Sunday at 10:00 AM | Analyze the week, update hook weights, plan next week |
 
+### 0. Daily Skill Update (run first)
+
+Keep the skill itself current automatically:
+
+```bash
+openclaw cron add \
+  --name "Genviral: Daily Skill Update" \
+  --cron "0 6 * * *" \
+  --tz "YOUR_TIMEZONE" \
+  --session isolated \
+  --message "Run the genviral skill self-updater: bash scripts/update-skill.sh. It will check for updates to SKILL.md, scripts/, and docs/ from the upstream repo and apply them. Never touches workspace/. Report what was updated or confirm already up to date." \
+  --announce
+```
+
 ### 1. Daily Content Generation
 
 Replace `YOUR_TIMEZONE` (e.g. `Europe/Brussels`, `America/New_York`).
