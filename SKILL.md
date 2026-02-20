@@ -11,11 +11,12 @@ metadata:
 
 # genviral Partner API Skill
 
-> **TL;DR:** Wraps genviral's Partner API into 42+ bash commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
+> **TL;DR:** Wraps genviral's Partner API into 50+ bash commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
 
 ## What This Skill Does
 
-- **Multi-Platform Posting:** Video or slideshow posts across TikTok, Instagram, or any connected account
+- **Multi-Platform Posting:** Video or slideshow posts across TikTok, Instagram, YouTube, Pinterest, LinkedIn, Facebook
+- **Studio AI Generation:** Generate images (sync) and videos (async) via AI models through the API
 - **File Management:** Upload videos/images to genviral's CDN
 - **AI Slideshow Generation:** Photo carousels from prompts, rendered to images
 - **Template System:** Reusable slideshow structures, convert winners to templates
@@ -63,6 +64,8 @@ genviral/
       packs.md              # pack CRUD + smart image selection (MANDATORY reading for any pack workflow)
       templates.md          # template CRUD + create-from-slideshow
       analytics.md          # all analytics commands
+      studio.md             # Studio AI: generate images/videos, list models, poll status
+      subscription.md       # subscription status, credits, tier
       pipeline.md           # content pipeline, performance loop, CTA testing, platform tips
       errors.md             # error codes and troubleshooting
     references/
@@ -107,6 +110,8 @@ Load only what you need for the current task:
 | Pack management, image selection (ANY pack workflow) | `docs/api/packs.md` |
 | Template creation and management | `docs/api/templates.md` |
 | Analytics queries and target management | `docs/api/analytics.md` |
+| Studio AI: generate images, videos, list models | `docs/api/studio.md` |
+| Subscription: check credits, tier, renewal dates | `docs/api/subscription.md` |
 | Research a specific niche quickly (trend + competitors + hooks) | `docs/api/analytics.md`, `docs/references/competitor-research.md`, `docs/prompts/hooks.md` |
 | Full content pipeline, performance loop, CTA testing | `docs/api/pipeline.md` |
 | Error codes, troubleshooting | `docs/api/errors.md` |

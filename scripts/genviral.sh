@@ -70,6 +70,16 @@
 #   get-analytics-workspace-suggestions
 #                                  Alias for analytics-workspace-suggestions
 #
+# Studio AI Commands:
+#   studio-models                  List available AI image/video models
+#   studio-generate-image          Generate an AI image synchronously
+#   studio-generate-video          Start async AI video generation
+#   studio-video-status            Poll video generation status
+#
+# Subscription Commands:
+#   subscription                   Check subscription, credits, and tier
+#   get-subscription               Alias for subscription
+#
 # Trends Commands:
 #   trend-brief                    Get one-call TikTok trend brief for a keyword
 #   get-trend-brief                Alias for trend-brief
@@ -606,6 +616,15 @@ ${BOLD}Analytics Commands:${NC}
   analytics-workspace-suggestions | get-analytics-workspace-suggestions
                                   GET /analytics/workspace-suggestions
 
+${BOLD}Studio AI Commands:${NC}
+  studio-models                   List available AI image/video models
+  studio-generate-image           Generate an AI image
+  studio-generate-video           Start async AI video generation
+  studio-video-status             Poll video generation status
+
+${BOLD}Subscription Commands:${NC}
+  subscription | get-subscription Check subscription, credits, and tier
+
 ${BOLD}Trends Commands:${NC}
   trend-brief | get-trend-brief   GET /trends/brief
 
@@ -629,6 +648,11 @@ ${BOLD}Examples:${NC}
   genviral.sh analytics-summary --range 30d --platforms tiktok,instagram
   genviral.sh analytics-target-create --platform tiktok --identifier @brand --alias "Brand HQ"
   genviral.sh trend-brief --keyword "morning routine" --range 7d --limit 10
+  genviral.sh studio-models --mode image
+  genviral.sh studio-generate-image --model-id "google/nano-banana" --prompt "A sunset beach" --aspect-ratio "16:9"
+  genviral.sh studio-generate-video --model-id "openai/sora-2" --prompt "Drone over neon city" --duration-seconds 8
+  genviral.sh studio-video-status --video-id VIDEO_UUID --poll
+  genviral.sh subscription
   genviral.sh post-draft --id SLIDESHOW_ID --caption "Text" --account-ids "id" --force-media-upload-cap
 EOF
 }
@@ -2914,6 +2938,367 @@ cmd_trend_brief() {
     printf '%s' "$response" | jq '.data'
 }
 
+# ===========================================================================
+# Studio AI Commands
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# studio-models
+# ---------------------------------------------------------------------------
+cmd_studio_models() {
+    local mode=""
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --mode)  mode="$2"; shift 2 ;;
+            --json)  json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    if [[ -n "$mode" ]]; then
+        case "$mode" in
+            image|video) ;;
+            *) die "--mode must be 'image' or 'video'. Got: $mode" ;;
+        esac
+    fi
+
+    local endpoint="/studio/models"
+    [[ -n "$mode" ]] && endpoint+="?mode=${mode}"
+
+    info "Fetching Studio models..."
+    local response
+    response="$(api_call GET "$endpoint")"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data'
+        return
+    fi
+
+    local total
+    total="$(printf '%s' "$response" | jq -r '.data.total // 0')"
+    ok "Retrieved $total Studio model(s)"
+
+    echo "" >&2
+    printf '%s' "$response" | jq -r '.data.models[] | "  [\(.mode)] \(.id) - \(.name) (\(.provider // "unknown"), \(.credits.default_cost // "?") credits)"' >&2
+
+    echo "" >&2
+    printf '%s' "$response" | jq '.data'
+}
+
+# ---------------------------------------------------------------------------
+# studio-generate-image
+# ---------------------------------------------------------------------------
+cmd_studio_generate_image() {
+    local model_id=""
+    local prompt=""
+    local image_urls=""
+    local aspect_ratio=""
+    local resolution=""
+    local output_format=""
+    local size=""
+    local max_images=""
+    local scale_factor=""
+    local raw_params=""
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --model-id|--model)   model_id="$2"; shift 2 ;;
+            --prompt)             prompt="$2"; shift 2 ;;
+            --image-urls)         image_urls="$2"; shift 2 ;;
+            --aspect-ratio)       aspect_ratio="$2"; shift 2 ;;
+            --resolution)         resolution="$2"; shift 2 ;;
+            --output-format)      output_format="$2"; shift 2 ;;
+            --size)               size="$2"; shift 2 ;;
+            --max-images)         max_images="$2"; shift 2 ;;
+            --scale-factor)       scale_factor="$2"; shift 2 ;;
+            --raw-params)         raw_params="$2"; shift 2 ;;
+            --json)               json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "model-id" "$model_id"
+    require_arg "prompt" "$prompt"
+
+    # Build params object
+    local params_obj="{}"
+    [[ -n "$aspect_ratio" ]] && params_obj="$(printf '%s' "$params_obj" | jq --arg v "$aspect_ratio" '. + {aspect_ratio: $v}')"
+    [[ -n "$resolution" ]]   && params_obj="$(printf '%s' "$params_obj" | jq --arg v "$resolution" '. + {resolution: $v}')"
+    [[ -n "$output_format" ]] && params_obj="$(printf '%s' "$params_obj" | jq --arg v "$output_format" '. + {output_format: $v}')"
+    [[ -n "$size" ]]         && params_obj="$(printf '%s' "$params_obj" | jq --arg v "$size" '. + {size: $v}')"
+    [[ -n "$max_images" ]]   && params_obj="$(printf '%s' "$params_obj" | jq --argjson v "$max_images" '. + {max_images: $v}')"
+    [[ -n "$scale_factor" ]] && params_obj="$(printf '%s' "$params_obj" | jq --argjson v "$scale_factor" '. + {scale_factor: $v}')"
+
+    # Build image_urls array if provided (comma-separated)
+    local image_urls_json="null"
+    if [[ -n "$image_urls" ]]; then
+        image_urls_json="$(printf '%s' "$image_urls" | jq -R 'split(",")')"
+    fi
+
+    # Build payload
+    local payload
+    payload="$(jq -n \
+        --arg model_id "$model_id" \
+        --arg prompt "$prompt" \
+        --argjson params "$params_obj" \
+        --argjson image_urls "$image_urls_json" \
+        '{model_id: $model_id, prompt: $prompt} +
+         (if $params != {} then {params: $params} else {} end) +
+         (if $image_urls != null then {image_urls: $image_urls} else {} end)'
+    )"
+
+    # Add raw_params if provided
+    if [[ -n "$raw_params" ]]; then
+        validate_json_string "raw-params" "$raw_params"
+        payload="$(printf '%s' "$payload" | jq --argjson rp "$raw_params" '. + {raw_params: $rp}')"
+    fi
+
+    info "Generating Studio image with model '$model_id'..."
+    local response
+    response="$(api_call POST /studio/images/generate "$payload")"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data'
+        return
+    fi
+
+    local output_url credits_used file_id
+    output_url="$(printf '%s' "$response" | jq -r '.data.output_url // empty')"
+    credits_used="$(printf '%s' "$response" | jq -r '.data.credits_used // "?"')"
+    file_id="$(printf '%s' "$response" | jq -r '.data.file_id // empty')"
+
+    ok "Image generated! ($credits_used credits used)"
+    echo "" >&2
+    step "  File ID:    $file_id"
+    step "  Output URL: $output_url"
+    echo "" >&2
+
+    printf '%s' "$response" | jq '.data'
+}
+
+# ---------------------------------------------------------------------------
+# studio-generate-video
+# ---------------------------------------------------------------------------
+cmd_studio_generate_video() {
+    local model_id=""
+    local prompt=""
+    local speech_text=""
+    local voice_id=""
+    local image_url=""
+    local video_url=""
+    local audio_url=""
+    local negative_prompt=""
+    local duration_seconds=""
+    local aspect_ratio=""
+    local resolution=""
+    local fps=""
+    local generate_audio=""
+    local raw_params=""
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --model-id|--model)     model_id="$2"; shift 2 ;;
+            --prompt)               prompt="$2"; shift 2 ;;
+            --speech-text)          speech_text="$2"; shift 2 ;;
+            --voice-id)             voice_id="$2"; shift 2 ;;
+            --image-url)            image_url="$2"; shift 2 ;;
+            --video-url)            video_url="$2"; shift 2 ;;
+            --audio-url)            audio_url="$2"; shift 2 ;;
+            --negative-prompt)      negative_prompt="$2"; shift 2 ;;
+            --duration-seconds|--duration) duration_seconds="$2"; shift 2 ;;
+            --aspect-ratio)         aspect_ratio="$2"; shift 2 ;;
+            --resolution)           resolution="$2"; shift 2 ;;
+            --fps)                  fps="$2"; shift 2 ;;
+            --generate-audio)       generate_audio="$(parse_boolean_flag_or_value "generate-audio" "$@")"; shift; [[ "${1:-}" != --* && -n "${1:-}" ]] && shift ;;
+            --raw-params)           raw_params="$2"; shift 2 ;;
+            --json)                 json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "model-id" "$model_id"
+
+    # Build params object
+    local params_obj="{}"
+    [[ -n "$duration_seconds" ]] && params_obj="$(printf '%s' "$params_obj" | jq --argjson v "$duration_seconds" '. + {duration_seconds: $v}')"
+    [[ -n "$aspect_ratio" ]]     && params_obj="$(printf '%s' "$params_obj" | jq --arg v "$aspect_ratio" '. + {aspect_ratio: $v}')"
+    [[ -n "$resolution" ]]       && params_obj="$(printf '%s' "$params_obj" | jq --arg v "$resolution" '. + {resolution: $v}')"
+    [[ -n "$fps" ]]              && params_obj="$(printf '%s' "$params_obj" | jq --argjson v "$fps" '. + {fps: $v}')"
+    [[ -n "$generate_audio" ]]   && params_obj="$(printf '%s' "$params_obj" | jq --argjson v "$generate_audio" '. + {generate_audio: $v}')"
+
+    # Build payload
+    local payload
+    payload="$(jq -n \
+        --arg model_id "$model_id" \
+        '{model_id: $model_id}'
+    )"
+
+    [[ -n "$prompt" ]]          && payload="$(printf '%s' "$payload" | jq --arg v "$prompt" '. + {prompt: $v}')"
+    [[ -n "$speech_text" ]]     && payload="$(printf '%s' "$payload" | jq --arg v "$speech_text" '. + {speech_text: $v}')"
+    [[ -n "$voice_id" ]]        && payload="$(printf '%s' "$payload" | jq --arg v "$voice_id" '. + {voice_id: $v}')"
+    [[ -n "$image_url" ]]       && payload="$(printf '%s' "$payload" | jq --arg v "$image_url" '. + {image_url: $v}')"
+    [[ -n "$video_url" ]]       && payload="$(printf '%s' "$payload" | jq --arg v "$video_url" '. + {video_url: $v}')"
+    [[ -n "$audio_url" ]]       && payload="$(printf '%s' "$payload" | jq --arg v "$audio_url" '. + {audio_url: $v}')"
+    [[ -n "$negative_prompt" ]] && payload="$(printf '%s' "$payload" | jq --arg v "$negative_prompt" '. + {negative_prompt: $v}')"
+
+    # Add params if non-empty
+    if [[ "$params_obj" != "{}" ]]; then
+        payload="$(printf '%s' "$payload" | jq --argjson p "$params_obj" '. + {params: $p}')"
+    fi
+
+    # Add raw_params if provided
+    if [[ -n "$raw_params" ]]; then
+        validate_json_string "raw-params" "$raw_params"
+        payload="$(printf '%s' "$payload" | jq --argjson rp "$raw_params" '. + {raw_params: $rp}')"
+    fi
+
+    info "Starting Studio video generation with model '$model_id'..."
+    local response
+    response="$(api_call POST /studio/videos/generate "$payload")"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data'
+        return
+    fi
+
+    local video_id status credits_used
+    video_id="$(printf '%s' "$response" | jq -r '.data.video_id // empty')"
+    status="$(printf '%s' "$response" | jq -r '.data.status // empty')"
+    credits_used="$(printf '%s' "$response" | jq -r '.data.credits_used // "?"')"
+
+    ok "Video generation started ($credits_used credits used)"
+    echo "" >&2
+    step "  Video ID: $video_id"
+    step "  Status:   $status"
+    step "  Poll with: genviral.sh studio-video-status --video-id $video_id"
+    echo "" >&2
+
+    printf '%s' "$response" | jq '.data'
+}
+
+# ---------------------------------------------------------------------------
+# studio-video-status
+# ---------------------------------------------------------------------------
+cmd_studio_video_status() {
+    local video_id=""
+    local json_output=false
+    local poll=false
+    local poll_interval=5
+    local poll_max=120
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --video-id|--id) video_id="$2"; shift 2 ;;
+            --json)          json_output=true; shift ;;
+            --poll)          poll=true; shift ;;
+            --poll-interval) poll_interval="$2"; shift 2 ;;
+            --poll-max)      poll_max="$2"; shift 2 ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "video-id" "$video_id"
+
+    if [[ "$poll" == true ]]; then
+        info "Polling video $video_id (every ${poll_interval}s, max ${poll_max}s)..."
+        local elapsed=0
+        while [[ $elapsed -lt $poll_max ]]; do
+            local response
+            response="$(api_call GET "/studio/videos/${video_id}")"
+
+            local status
+            status="$(printf '%s' "$response" | jq -r '.data.status // "unknown"')"
+
+            case "$status" in
+                succeeded)
+                    local output_url
+                    output_url="$(printf '%s' "$response" | jq -r '.data.output_url // empty')"
+                    ok "Video ready!"
+                    step "  Output URL: $output_url"
+                    echo "" >&2
+                    printf '%s' "$response" | jq '.data'
+                    return 0
+                    ;;
+                failed)
+                    local error_msg
+                    error_msg="$(printf '%s' "$response" | jq -r '.data.error // "Unknown error"')"
+                    die "Video generation failed: $error_msg"
+                    ;;
+                *)
+                    step "  [$elapsed/${poll_max}s] Status: $status"
+                    sleep "$poll_interval"
+                    elapsed=$((elapsed + poll_interval))
+                    ;;
+            esac
+        done
+        die "Polling timed out after ${poll_max}s. Video ID: $video_id (status: $status)"
+    fi
+
+    info "Checking video status..."
+    local response
+    response="$(api_call GET "/studio/videos/${video_id}")"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data'
+        return
+    fi
+
+    local status output_url
+    status="$(printf '%s' "$response" | jq -r '.data.status // "unknown"')"
+    output_url="$(printf '%s' "$response" | jq -r '.data.output_url // "N/A"')"
+
+    ok "Video status: $status"
+    echo "" >&2
+    step "  Video ID:   $video_id"
+    step "  Status:     $status"
+    [[ "$status" == "succeeded" ]] && step "  Output URL: $output_url"
+    echo "" >&2
+
+    printf '%s' "$response" | jq '.data'
+}
+
+# ===========================================================================
+# Subscription Commands
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# subscription
+# ---------------------------------------------------------------------------
+cmd_subscription() {
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --json) json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    info "Fetching subscription..."
+    local response
+    response="$(api_call GET /subscription)"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data'
+        return
+    fi
+
+    local tier status credits_remaining credits_limit
+    tier="$(printf '%s' "$response" | jq -r '.data.subscription.tier // "unknown"')"
+    status="$(printf '%s' "$response" | jq -r '.data.subscription.status // "unknown"')"
+    credits_remaining="$(printf '%s' "$response" | jq -r '.data.subscription.credits.remaining // "?"')"
+    credits_limit="$(printf '%s' "$response" | jq -r '.data.subscription.credits.limit // "?"')"
+
+    ok "Subscription: $tier ($status) - $credits_remaining / $credits_limit credits remaining"
+    echo "" >&2
+
+    printf '%s' "$response" | jq '.data'
+}
+
 # ---------------------------------------------------------------------------
 # full-pipeline (legacy TikTok-focused command)
 # ---------------------------------------------------------------------------
@@ -3135,6 +3520,19 @@ case "$COMMAND" in
                                       check_auth; cmd_analytics_refresh_get "$@" ;;
     analytics-workspace-suggestions|get-analytics-workspace-suggestions)
                                       check_auth; cmd_analytics_workspace_suggestions "$@" ;;
+
+    # Studio AI Commands
+    studio-models|get-studio-models)
+                                      check_auth; cmd_studio_models "$@" ;;
+    studio-generate-image|generate-studio-image)
+                                      check_auth; cmd_studio_generate_image "$@" ;;
+    studio-generate-video|generate-studio-video)
+                                      check_auth; cmd_studio_generate_video "$@" ;;
+    studio-video-status|get-studio-video)
+                                      check_auth; cmd_studio_video_status "$@" ;;
+
+    # Subscription Commands
+    subscription|get-subscription)    check_auth; cmd_subscription "$@" ;;
 
     # Trends Commands
     trend-brief|get-trend-brief)      check_auth; cmd_trend_brief "$@" ;;
