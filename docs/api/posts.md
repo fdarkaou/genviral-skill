@@ -63,6 +63,28 @@ TikTok `privacy_level` options:
 - `FOLLOWER_OF_CREATOR`
 - `SELF_ONLY` (draft mode)
 
+**Pinterest-specific settings** (when at least one account is Pinterest):
+
+```bash
+genviral.sh create-post \
+  --caption "10 minimalist desk setups" \
+  --media-type slideshow \
+  --media-urls "url1,url2,url3" \
+  --accounts "pinterest_account_id" \
+  --pinterest-board-id "BOARD_ID" \
+  --pinterest-title "Pin title (max 100 chars)" \
+  --pinterest-link "https://yourblog.com/article" \
+  --pinterest-tags "desk setup,minimalism,home office"
+```
+
+Pinterest options:
+- `--pinterest-board-id` - Target board ID (max 128 chars). Omit to use account defaults.
+- `--pinterest-title` - Pin title override (max 100 chars)
+- `--pinterest-link` - Destination URL on the pin
+- `--pinterest-tags` - Comma-separated topic tags (up to 30, multi-word supported)
+
+**Important:** TikTok and Pinterest settings are mutually exclusive in one request. Use only one platform-specific block per post.
+
 **Scheduling:**
 
 - Omit `--scheduled-at` or set it within 30 seconds of now: post is queued for immediate publish (status: `pending`)
@@ -101,11 +123,23 @@ Clear operations:
 - Remove music: `--music-url null`
 - Clear scheduled time: `--clear-scheduled-at`
 - Clear all TikTok settings: `--clear-tiktok`
+- Clear all Pinterest settings: `--clear-pinterest`
+
+Pinterest update example:
+```bash
+genviral.sh update-post \
+  --id POST_ID \
+  --pinterest-board-id "NEW_BOARD_ID" \
+  --pinterest-title "Updated pin title" \
+  --pinterest-link "https://yourblog.com/new-article" \
+  --pinterest-tags "new tag 1,new tag 2"
+```
 
 Validation notes:
 - `--scheduled-at` must be ISO 8601 with timezone offset
 - `--music-url` must be a TikTok URL (unless using `null` to clear)
-- TikTok boolean toggles support both flag form and explicit values
+- TikTok/Pinterest boolean toggles support both flag form and explicit values
+- TikTok and Pinterest settings are mutually exclusive
 
 ---
 

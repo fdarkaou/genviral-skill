@@ -835,6 +835,10 @@ cmd_create_post() {
     local tiktok_is_branded_content=""
     local tiktok_user_consent=""
     local tiktok_is_your_brand=""
+    local pinterest_board_id=""
+    local pinterest_title=""
+    local pinterest_link=""
+    local pinterest_tags=""
     local force_media_upload_cap=false
 
     while [[ $# -gt 0 ]]; do
@@ -851,6 +855,10 @@ cmd_create_post() {
             --tiktok-description)     tiktok_description="$2"; shift 2 ;;
             --tiktok-post-mode)       tiktok_post_mode="$2"; shift 2 ;;
             --tiktok-privacy)         tiktok_privacy="$2"; shift 2 ;;
+            --pinterest-board-id)     pinterest_board_id="$2"; shift 2 ;;
+            --pinterest-title)        pinterest_title="$2"; shift 2 ;;
+            --pinterest-link)         pinterest_link="$2"; shift 2 ;;
+            --pinterest-tags)         pinterest_tags="$2"; shift 2 ;;
             --force-media-upload-cap) force_media_upload_cap=true; shift ;;
             --tiktok-disable-comment)
                 tiktok_disable_comment="$(parse_boolean_flag_or_value "tiktok-disable-comment" "${2:-}")"
@@ -909,6 +917,19 @@ cmd_create_post() {
     [[ -n "$tiktok_is_branded_content" ]] && validate_boolean "is-branded-content" "$tiktok_is_branded_content"
     [[ -n "$tiktok_user_consent" ]] && validate_boolean "user-consent" "$tiktok_user_consent"
     [[ -n "$tiktok_is_your_brand" ]] && validate_boolean "is-your-brand" "$tiktok_is_your_brand"
+
+    # Validate Pinterest fields
+    [[ -n "$pinterest_board_id" && ${#pinterest_board_id} -gt 128 ]] && die "--pinterest-board-id max length is 128 characters"
+    [[ -n "$pinterest_title" && ${#pinterest_title} -gt 100 ]] && die "--pinterest-title max length is 100 characters"
+
+    # Mutual exclusivity: tiktok and pinterest settings cannot coexist
+    local has_tiktok_settings=false
+    local has_pinterest_settings=false
+    [[ -n "$tiktok_title" || -n "$tiktok_description" || -n "$tiktok_post_mode" || -n "$tiktok_privacy" || -n "$tiktok_disable_comment" || -n "$tiktok_disable_duet" || -n "$tiktok_disable_stitch" || -n "$tiktok_auto_add_music" || -n "$tiktok_is_commercial" || -n "$tiktok_is_branded_content" || -n "$tiktok_user_consent" || -n "$tiktok_is_your_brand" ]] && has_tiktok_settings=true
+    [[ -n "$pinterest_board_id" || -n "$pinterest_title" || -n "$pinterest_link" || -n "$pinterest_tags" ]] && has_pinterest_settings=true
+    if [[ "$has_tiktok_settings" == true && "$has_pinterest_settings" == true ]]; then
+        die "TikTok and Pinterest settings are mutually exclusive in one request"
+    fi
 
     # Validate media type
     case "$media_type" in
@@ -992,6 +1013,23 @@ cmd_create_post() {
         payload="$(printf '%s' "$payload" | jq --argjson tt "$tiktok_obj" '. + {tiktok: $tt}')"
     fi
 
+    # Build Pinterest settings if any provided
+    if [[ -n "$pinterest_board_id" || -n "$pinterest_title" || -n "$pinterest_link" || -n "$pinterest_tags" ]]; then
+        local pinterest_obj='{}'
+        [[ -n "$pinterest_board_id" ]] && pinterest_obj="$(printf '%s' "$pinterest_obj" | jq --arg v "$pinterest_board_id" '. + {board_id: $v}')"
+        [[ -n "$pinterest_title" ]] && pinterest_obj="$(printf '%s' "$pinterest_obj" | jq --arg v "$pinterest_title" '. + {title: $v}')"
+        [[ -n "$pinterest_link" ]] && pinterest_obj="$(printf '%s' "$pinterest_obj" | jq --arg v "$pinterest_link" '. + {link: $v}')"
+        if [[ -n "$pinterest_tags" ]]; then
+            local tags_array
+            tags_array="$(split_csv_to_json_array "$pinterest_tags")"
+            local tag_count
+            tag_count="$(printf '%s' "$tags_array" | jq 'length')"
+            (( tag_count <= 30 )) || die "--pinterest-tags allows up to 30 tags (got $tag_count)"
+            pinterest_obj="$(printf '%s' "$pinterest_obj" | jq --argjson v "$tags_array" '. + {tags: $v}')"
+        fi
+        payload="$(printf '%s' "$payload" | jq --argjson pt "$pinterest_obj" '. + {pinterest: $pt}')"
+    fi
+
     info "Creating post..."
     step "  Caption: ${caption:0:80}$([ ${#caption} -gt 80 ] && echo '...')"
     step "  Media: $media_type"
@@ -1038,6 +1076,11 @@ cmd_update_post() {
     local tiktok_is_branded_content=""
     local tiktok_user_consent=""
     local tiktok_is_your_brand=""
+    local pinterest_board_id=""
+    local pinterest_title=""
+    local pinterest_link=""
+    local pinterest_tags=""
+    local clear_pinterest=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -1052,10 +1095,15 @@ cmd_update_post() {
             --external-id)          external_id="$2"; shift 2 ;;
             --clear-scheduled-at)   clear_scheduled_at=true; shift ;;
             --clear-tiktok)         clear_tiktok=true; shift ;;
+            --clear-pinterest)      clear_pinterest=true; shift ;;
             --tiktok-title)         tiktok_title="$2"; shift 2 ;;
             --tiktok-description)   tiktok_description="$2"; shift 2 ;;
             --tiktok-post-mode)     tiktok_post_mode="$2"; shift 2 ;;
             --tiktok-privacy)       tiktok_privacy="$2"; shift 2 ;;
+            --pinterest-board-id)   pinterest_board_id="$2"; shift 2 ;;
+            --pinterest-title)      pinterest_title="$2"; shift 2 ;;
+            --pinterest-link)       pinterest_link="$2"; shift 2 ;;
+            --pinterest-tags)       pinterest_tags="$2"; shift 2 ;;
             --tiktok-disable-comment)
                 tiktok_disable_comment="$(parse_boolean_flag_or_value "tiktok-disable-comment" "${2:-}")"
                 if [[ $# -ge 2 && -n "${2:-}" && "${2:-}" != --* ]]; then shift 2; else shift; fi
@@ -1117,6 +1165,14 @@ cmd_update_post() {
     if [[ "$clear_tiktok" == true && ( -n "$tiktok_title" || -n "$tiktok_description" || -n "$tiktok_post_mode" || -n "$tiktok_privacy" || -n "$tiktok_disable_comment" || -n "$tiktok_disable_duet" || -n "$tiktok_disable_stitch" || -n "$tiktok_auto_add_music" || -n "$tiktok_is_commercial" || -n "$tiktok_is_branded_content" || -n "$tiktok_user_consent" || -n "$tiktok_is_your_brand" ) ]]; then
         die "Use either TikTok update options or --clear-tiktok, not both."
     fi
+
+    if [[ "$clear_pinterest" == true && ( -n "$pinterest_board_id" || -n "$pinterest_title" || -n "$pinterest_link" || -n "$pinterest_tags" ) ]]; then
+        die "Use either Pinterest update options or --clear-pinterest, not both."
+    fi
+
+    # Validate Pinterest fields
+    [[ -n "$pinterest_board_id" && ${#pinterest_board_id} -gt 128 ]] && die "--pinterest-board-id max length is 128 characters"
+    [[ -n "$pinterest_title" && ${#pinterest_title} -gt 100 ]] && die "--pinterest-title max length is 100 characters"
 
     if [[ -n "$tiktok_post_mode" ]]; then
         case "$tiktok_post_mode" in
@@ -1208,9 +1264,28 @@ cmd_update_post() {
         payload="$(printf '%s' "$payload" | jq --argjson tt "$tiktok_obj" '. + {tiktok: $tt}')"
     fi
 
+    # Build Pinterest settings for update
+    if [[ "$clear_pinterest" == true ]]; then
+        payload="$(printf '%s' "$payload" | jq '. + {pinterest: null}')"
+    elif [[ -n "$pinterest_board_id" || -n "$pinterest_title" || -n "$pinterest_link" || -n "$pinterest_tags" ]]; then
+        local pinterest_obj='{}'
+        [[ -n "$pinterest_board_id" ]] && pinterest_obj="$(printf '%s' "$pinterest_obj" | jq --arg v "$pinterest_board_id" '. + {board_id: $v}')"
+        [[ -n "$pinterest_title" ]] && pinterest_obj="$(printf '%s' "$pinterest_obj" | jq --arg v "$pinterest_title" '. + {title: $v}')"
+        [[ -n "$pinterest_link" ]] && pinterest_obj="$(printf '%s' "$pinterest_obj" | jq --arg v "$pinterest_link" '. + {link: $v}')"
+        if [[ -n "$pinterest_tags" ]]; then
+            local tags_array
+            tags_array="$(split_csv_to_json_array "$pinterest_tags")"
+            local tag_count
+            tag_count="$(printf '%s' "$tags_array" | jq 'length')"
+            (( tag_count <= 30 )) || die "--pinterest-tags allows up to 30 tags (got $tag_count)"
+            pinterest_obj="$(printf '%s' "$pinterest_obj" | jq --argjson v "$tags_array" '. + {tags: $v}')"
+        fi
+        payload="$(printf '%s' "$payload" | jq --argjson pt "$pinterest_obj" '. + {pinterest: $pt}')"
+    fi
+
     # Check for empty payload
     if [[ "$payload" == "{}" ]]; then
-        die "No fields provided for update. Use --caption, --media-type, --accounts, --scheduled-at, --clear-scheduled-at, TikTok options, etc."
+        die "No fields provided for update. Use --caption, --media-type, --accounts, --scheduled-at, --clear-scheduled-at, TikTok/Pinterest options, etc."
     fi
 
     info "Updating post $post_id..."
