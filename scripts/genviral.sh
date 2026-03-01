@@ -565,6 +565,17 @@ ${BOLD}Account & File Commands:${NC}
   upload                          Upload file to CDN (presigned URL flow)
   list-files                      List uploaded files
 
+  Folder Commands:
+  list-folders                    List folders (by media type and parent level)
+  create-folder                   Create a folder (supports nesting)
+  get-folder                      Get folder metadata
+  move-folder                     Move folder to new parent (or root)
+  delete-folder                   Delete folder and all nested contents
+  folder-ancestors                Get breadcrumb trail for a folder
+  folder-items                    List items inside a folder
+  folder-items-add                Add files/slideshows to a folder
+  folder-items-remove             Remove items from a folder
+
 ${BOLD}Post Commands:${NC}
   create-post                     Create a post (video or slideshow, multi-account)
   update-post                     Update an existing post
@@ -809,6 +820,286 @@ cmd_list_files() {
         .data.files // [] | .[] |
         "  \(.filename // "unnamed")\n    URL: \(.url)\n    Type: \(.contentType)\n    Size: \(.size) bytes\n    Created: \(.createdAt)\n"
     '
+}
+
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Folder Commands
+# ---------------------------------------------------------------------------
+
+cmd_list_folders() {
+    local media_type=""
+    local parent_folder_id=""
+    local limit=50
+    local offset=0
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --media-type)        media_type="$2"; shift 2 ;;
+            --parent-folder-id)  parent_folder_id="$2"; shift 2 ;;
+            --limit)             limit="$2"; shift 2 ;;
+            --offset)            offset="$2"; shift 2 ;;
+            --json)              json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "media-type" "$media_type"
+    case "$media_type" in
+        ai_image|ai_video|upload|slideshow) ;;
+        *) die "--media-type must be one of: ai_image, ai_video, upload, slideshow. Got: $media_type" ;;
+    esac
+    validate_positive_int "limit" "$limit"
+    validate_max_int "limit" "$limit" 100
+    validate_nonnegative_int "offset" "$offset"
+
+    local endpoint="/folders?media_type=${media_type}&limit=${limit}&offset=${offset}"
+    [[ -n "$parent_folder_id" ]] && endpoint="${endpoint}&parent_folder_id=${parent_folder_id}"
+
+    info "Fetching folders (media_type=${media_type})..."
+    local response
+    response="$(api_call GET "$endpoint")"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data // {}'
+        return
+    fi
+
+    local total
+    total="$(printf '%s' "$response" | jq '.data.total // 0')"
+    ok "Found $total folders"
+    echo ""
+    printf '%s' "$response" | jq -r '
+        .data.folders // [] | .[] |
+        "  \(.name)  [id: \(.id)]  files: \(.file_count)  subfolders: \(.subfolder_count)\n    created: \(.created_at)\n"
+    '
+}
+
+cmd_create_folder() {
+    local name=""
+    local media_type=""
+    local parent_folder_id=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --name)              name="$2"; shift 2 ;;
+            --media-type)        media_type="$2"; shift 2 ;;
+            --parent-folder-id)  parent_folder_id="$2"; shift 2 ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "name" "$name"
+    require_arg "media-type" "$media_type"
+    case "$media_type" in
+        ai_image|ai_video|upload|slideshow) ;;
+        *) die "--media-type must be one of: ai_image, ai_video, upload, slideshow. Got: $media_type" ;;
+    esac
+
+    local payload
+    payload="$(jq -n --arg name "$name" --arg media_type "$media_type" --arg pfid "$parent_folder_id" '
+        { name: $name, media_type: $media_type }
+        | if $pfid != "" then . + { parent_folder_id: $pfid } else . end
+    ')"
+
+    info "Creating folder \"${name}\"..."
+    local response
+    response="$(api_call POST /folders "$payload")"
+    local id
+    id="$(printf '%s' "$response" | jq -r '.data.id // empty')"
+    ok "Folder created: $id"
+    printf '%s' "$response" | jq '.data'
+}
+
+cmd_get_folder() {
+    local id=""
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --id)   id="$2"; shift 2 ;;
+            --json) json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "id" "$id"
+    info "Fetching folder ${id}..."
+    local response
+    response="$(api_call GET "/folders/${id}")"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data // {}'
+        return
+    fi
+    printf '%s' "$response" | jq '.data'
+}
+
+cmd_move_folder() {
+    local id=""
+    local parent_folder_id=""
+    local to_root=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --id)                id="$2"; shift 2 ;;
+            --parent-folder-id)  parent_folder_id="$2"; shift 2 ;;
+            --to-root)           to_root=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "id" "$id"
+    if [[ "$to_root" == false && -z "$parent_folder_id" ]]; then
+        die "Provide --parent-folder-id or --to-root"
+    fi
+
+    local payload
+    if [[ "$to_root" == true ]]; then
+        payload='{"parent_folder_id":null}'
+    else
+        payload="$(jq -n --arg pfid "$parent_folder_id" '{ parent_folder_id: $pfid }')"
+    fi
+
+    info "Moving folder ${id}..."
+    local response
+    response="$(api_call PATCH "/folders/${id}" "$payload")"
+    ok "Folder moved"
+    printf '%s' "$response" | jq '.data'
+}
+
+cmd_delete_folder() {
+    local id=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --id) id="$2"; shift 2 ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "id" "$id"
+    info "Deleting folder ${id} (and all nested contents)..."
+    api_call DELETE "/folders/${id}" >/dev/null
+    ok "Folder deleted"
+}
+
+cmd_folder_ancestors() {
+    local id=""
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --id)   id="$2"; shift 2 ;;
+            --json) json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "id" "$id"
+    info "Fetching ancestors for folder ${id}..."
+    local response
+    response="$(api_call GET "/folders/${id}/ancestors")"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data // {}'
+        return
+    fi
+    printf '%s' "$response" | jq -r '
+        .data.ancestors // [] | .[] |
+        "\(.depth | . * 2 | " " * .) \(.name)  [id: \(.id)]"
+    '
+}
+
+cmd_folder_items() {
+    local id=""
+    local limit=50
+    local offset=0
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --id)     id="$2"; shift 2 ;;
+            --limit)  limit="$2"; shift 2 ;;
+            --offset) offset="$2"; shift 2 ;;
+            --json)   json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "id" "$id"
+    validate_positive_int "limit" "$limit"
+    validate_max_int "limit" "$limit" 100
+    validate_nonnegative_int "offset" "$offset"
+
+    info "Fetching items in folder ${id}..."
+    local response
+    response="$(api_call GET "/folders/${id}/items?limit=${limit}&offset=${offset}")"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data // {}'
+        return
+    fi
+
+    local total
+    total="$(printf '%s' "$response" | jq '.data.total // 0')"
+    ok "Found $total items"
+    echo ""
+    printf '%s' "$response" | jq -r '
+        .data.items // [] | .[] |
+        "  \(.filename // .id)\n    URL: \(.url // "(slideshow)")\n    Created: \(.created_at)\n"
+    '
+}
+
+cmd_folder_items_add() {
+    local id=""
+    local item_ids=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --id)       id="$2"; shift 2 ;;
+            --item-ids) item_ids="$2"; shift 2 ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "id" "$id"
+    require_arg "item-ids" "$item_ids"
+
+    # Convert comma-separated to JSON array
+    local payload
+    payload="$(printf '%s' "$item_ids" | tr ',' '\n' | jq -R . | jq -s '{ item_ids: . }')"
+
+    info "Adding items to folder ${id}..."
+    local response
+    response="$(api_call POST "/folders/${id}/items" "$payload")"
+    ok "Items added"
+    printf '%s' "$response" | jq '.data // .message'
+}
+
+cmd_folder_items_remove() {
+    local id=""
+    local item_ids=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --id)       id="$2"; shift 2 ;;
+            --item-ids) item_ids="$2"; shift 2 ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "id" "$id"
+    require_arg "item-ids" "$item_ids"
+
+    local payload
+    payload="$(printf '%s' "$item_ids" | tr ',' '\n' | jq -R . | jq -s '{ item_ids: . }')"
+
+    info "Removing items from folder ${id}..."
+    local response
+    response="$(api_call DELETE "/folders/${id}/items" "$payload")"
+    ok "Items removed"
 }
 
 # ---------------------------------------------------------------------------
@@ -3543,6 +3834,17 @@ case "$COMMAND" in
     accounts)                         check_auth; cmd_accounts "$@" ;;
     upload)                           check_auth; cmd_upload "$@" ;;
     list-files)                       check_auth; cmd_list_files "$@" ;;
+
+    # Folder Commands
+    list-folders)                     check_auth; cmd_list_folders "$@" ;;
+    create-folder)                    check_auth; cmd_create_folder "$@" ;;
+    get-folder)                       check_auth; cmd_get_folder "$@" ;;
+    move-folder)                      check_auth; cmd_move_folder "$@" ;;
+    delete-folder)                    check_auth; cmd_delete_folder "$@" ;;
+    folder-ancestors)                 check_auth; cmd_folder_ancestors "$@" ;;
+    folder-items)                     check_auth; cmd_folder_items "$@" ;;
+    folder-items-add)                 check_auth; cmd_folder_items_add "$@" ;;
+    folder-items-remove)              check_auth; cmd_folder_items_remove "$@" ;;
 
     # Post Commands
     create-post)                      check_auth; cmd_create_post "$@" ;;

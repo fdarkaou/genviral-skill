@@ -11,13 +11,14 @@ metadata:
 
 # genviral Partner API Skill
 
-> **TL;DR:** Wraps genviral's Partner API into 50+ bash commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
+> **TL;DR:** Wraps genviral's Partner API into 60+ bash commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
 
 ## What This Skill Does
 
 - **Multi-Platform Posting:** Video or slideshow posts across TikTok, Instagram, YouTube, Pinterest, LinkedIn, Facebook
 - **Studio AI Generation:** Generate images (sync) and videos (async) via AI models through the API
-- **File Management:** Upload videos/images to genviral's CDN
+- **File Management:** Upload videos/images to genviral's CDN; organize with folders
+- **Folder Management:** Nested folders for uploads, AI images, AI videos, and slideshows
 - **AI Slideshow Generation:** Photo carousels from prompts, rendered to images
 - **Template System:** Reusable slideshow structures, convert winners to templates
 - **Pack Management:** Image packs as slideshow backgrounds
@@ -59,6 +60,7 @@ genviral/
     setup.md                # Onboarding guide (conversational, 5 phases)
     api/
       accounts-files.md     # accounts, upload, list-files
+      folders.md            # folder CRUD, move, ancestors, items management
       posts.md              # create-post, update-post, retry, list, get, delete
       slideshows.md         # generate, render, review, update, regenerate, duplicate, list + text styles
       packs.md              # pack CRUD + smart image selection (MANDATORY reading for any pack workflow)
@@ -105,6 +107,7 @@ Load only what you need for the current task:
 | Task | Read |
 |------|------|
 | Account discovery, file upload | `docs/api/accounts-files.md` |
+| Folder management (create, list, move, delete, items) | `docs/api/folders.md` |
 | Create, update, list, delete posts | `docs/api/posts.md` |
 | Slideshow generation, rendering, editing, text styles | `docs/api/slideshows.md` |
 | Pack management, image selection (ANY pack workflow) | `docs/api/packs.md` |

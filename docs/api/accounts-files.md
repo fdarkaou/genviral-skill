@@ -1,5 +1,8 @@
 # Account & File Commands
 
+> **Organizing files?** Use folders to group uploads and Studio-generated assets.
+> See `docs/api/folders.md` for `create-folder`, `list-folders`, `folder-items-add`, etc.
+
 ## accounts
 List connected BYO and hosted accounts in your scope. Use this to discover account IDs for posting.
 
