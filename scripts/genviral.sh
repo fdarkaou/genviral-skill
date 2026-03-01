@@ -880,12 +880,14 @@ cmd_create_folder() {
     local name=""
     local media_type=""
     local parent_folder_id=""
+    local json_output=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --name)              name="$2"; shift 2 ;;
             --media-type)        media_type="$2"; shift 2 ;;
             --parent-folder-id)  parent_folder_id="$2"; shift 2 ;;
+            --json)              json_output=true; shift ;;
             *) die "Unknown option: $1" ;;
         esac
     done
@@ -906,6 +908,12 @@ cmd_create_folder() {
     info "Creating folder \"${name}\"..."
     local response
     response="$(api_call POST /folders "$payload")"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$response" | jq '.data // {}'
+        return
+    fi
+
     local id
     id="$(printf '%s' "$response" | jq -r '.data.id // empty')"
     ok "Folder created: $id"
