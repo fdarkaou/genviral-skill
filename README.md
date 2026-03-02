@@ -164,11 +164,20 @@ The skill builds a feedback loop over time:
 
 After 4+ weeks the patterns become clear enough to make data-driven decisions about hooks, CTA types, and post timing.
 
+## Included: Meta Ads Skill
+
+This repo includes the [meta-ads-skill](https://github.com/fdarkaou/meta-ads-skill) in the `meta-ads/` directory — an autonomous Meta (Facebook/Instagram) Ads manager and 8-stage AI campaign builder.
+
+It uses Genviral's Studio API for ad creative generation. See [`meta-ads/README.md`](meta-ads/README.md) for setup.
+
+Also available standalone: [fdarkaou/meta-ads-skill](https://github.com/fdarkaou/meta-ads-skill)
+
 ## Links
 
 - [Genviral](https://genviral.io)
 - [Partner API docs](https://docs.genviral.io)
 - [OpenClaw](https://openclaw.ai)
+- [meta-ads-skill](https://github.com/fdarkaou/meta-ads-skill) — standalone repo
 
 ## License
 

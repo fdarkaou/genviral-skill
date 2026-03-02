@@ -1,0 +1,18 @@
+# Sensitive — never commit
+config.yaml
+*.env
+
+# Local campaign output (stays on your machine)
+campaign/runs/
+data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db

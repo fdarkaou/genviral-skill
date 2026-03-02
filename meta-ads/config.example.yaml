@@ -1,0 +1,23 @@
+# Meta Ads Skill — Configuration
+# Copy this to config.yaml and fill in your values.
+# NEVER commit config.yaml — it contains your API tokens.
+
+# Meta Graph API access token (System User token, never-expiring)
+# How to get: business.facebook.com → Settings → System Users → Generate Token
+# Required permissions: ads_management, ads_read, pages_manage_ads, business_management
+access_token: "YOUR_META_GRAPH_API_TOKEN_HERE"
+
+products:
+  # Add one entry per product/ad account you manage
+  my-product:
+    ad_account_id: "act_XXXXXXXXXXXXXXXXX"   # from Ads Manager URL
+    page_id: "XXXXXXXXXXXXXXXXX"             # Facebook Page ID
+    ig_account_id: "XXXXXXXXXXXXXXXXX"       # Instagram account ID (optional)
+    pixel_id: "XXXXXXXXXXXXXXXXX"            # Meta Pixel ID (optional)
+    lp_url: "https://yourproduct.com"        # Landing page URL
+    name: "My Product"                       # Display name
+    action_type: "purchase"                  # purchase | lead | start_trial
+    target_cpa: 20.0                         # Target cost per acquisition (USD)
+
+settings:
+  api_version: "v21.0"
