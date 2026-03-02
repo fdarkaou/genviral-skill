@@ -181,3 +181,11 @@ bash scripts/update-skill.sh --force   # force re-apply even if already current
 - Works with hosted and BYO accounts
 - Posts can be scheduled or queued for immediate publishing
 - TikTok slideshow drafts: use `post_mode: MEDIA_UPLOAD` to save to drafts inbox for audio addition
+
+## Meta Ads Skill (Included)
+
+This repo includes the **meta-ads** skill in the `meta-ads/` directory — an autonomous Meta (Facebook/Instagram) Ads manager and 8-stage AI campaign builder that uses Genviral's Studio API for ad creative generation.
+
+See [`meta-ads/SKILL.md`](meta-ads/SKILL.md) for full workflow and setup.
+
+Also available standalone: [fdarkaou/meta-ads-skill](https://github.com/fdarkaou/meta-ads-skill)
