@@ -11,7 +11,7 @@ metadata:
 
 # genviral Partner API Skill
 
-> **TL;DR:** Wraps genviral's Partner API into 60+ bash commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
+> **TL;DR:** Wraps genviral's Partner API into 60+ bash commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. TikTok copy flow: `copy-tiktok-preview` → `copy-tiktok-import` (with exactly one of `pack_id` or `pack_images`). Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
 
 ## What This Skill Does
 
@@ -62,7 +62,7 @@ genviral/
       accounts-files.md     # accounts, upload, list-files
       folders.md            # folder CRUD, move, ancestors, items management
       posts.md              # create-post, update-post, retry, list, get, delete
-      slideshows.md         # generate, render, review, update, regenerate, duplicate, list + text styles
+      slideshows.md         # generate/render/update + TikTok copy preview/import + text styles
       packs.md              # pack CRUD + smart image selection (MANDATORY reading for any pack workflow)
       templates.md          # template CRUD + create-from-slideshow
       analytics.md          # all analytics commands
@@ -109,7 +109,7 @@ Load only what you need for the current task:
 | Account discovery, file upload | `docs/api/accounts-files.md` |
 | Folder management (create, list, move, delete, items) | `docs/api/folders.md` |
 | Create, update, list, delete posts | `docs/api/posts.md` |
-| Slideshow generation, rendering, editing, text styles | `docs/api/slideshows.md` |
+| Slideshow generation, TikTok copy import, rendering, editing, text styles | `docs/api/slideshows.md` |
 | Pack management, image selection (ANY pack workflow) | `docs/api/packs.md` |
 | Template creation and management | `docs/api/templates.md` |
 | Analytics queries and target management | `docs/api/analytics.md` |
@@ -133,6 +133,18 @@ When asked things like "research this niche", "find what works in this niche", o
    - 5 hashtags to start with
    - 1 "gap to exploit" insight
 5. Save findings to `workspace/performance/competitor-insights.md` and use them in subsequent content prompts.
+
+## TikTok Copy Remix Mode (When user asks "make similar but new")
+
+When the user wants to copy a TikTok slideshow idea but generate new visuals:
+
+1. Run `copy-tiktok-preview` first and capture `preview_id`, source image URLs, and slide count.
+2. Run `copy-tiktok-import` with exactly one pack source (`pack_id` or `pack_images`) so text overlays are extracted and mapped into editable slides.
+3. Generate replacement images through Studio using `google/nano-banana-2` with each source slide image as reference input:
+   - command: `studio-generate-image --model-id "google/nano-banana-2" --image-urls "<source_url>" --prompt "<product-aware transformation prompt>"`
+4. Build prompts with product context from `workspace/context/product.md` so generated visuals stay relevant to the advertised product.
+5. Replace slide backgrounds with generated URLs (`update --slides-file ...`) while preserving/editing imported text elements.
+6. Render (`render`) and review (`review`) before posting; never skip visual QA.
 
 ## Non-Negotiable Rules
 
@@ -168,7 +180,7 @@ bash scripts/update-skill.sh --dry-run # preview only, no changes
 bash scripts/update-skill.sh --force   # force re-apply even if already current
 ```
 
-**What gets updated (skill-owned):** `SKILL.md`, `scripts/`, `docs/` (all subdirs)
+**What gets updated (skill-owned):** `README.md`, `SKILL.md`, `scripts/`, `docs/` (all subdirs)
 
 **What never gets touched (user-owned):** `workspace/` — your data, context, hooks, and performance logs are always preserved.
 

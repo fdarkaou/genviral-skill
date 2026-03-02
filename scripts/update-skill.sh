@@ -4,8 +4,7 @@
 # =============================================================================
 #
 # Checks fdarkaou/genviral-skill for updates and applies only skill-owned files.
-# Safe to run anytime — never touches user-owned files (context/, hooks/, 
-# performance/, content/).
+# Safe to run anytime — never touches user-owned files under workspace/.
 #
 # Usage: ./update-skill.sh [--force] [--dry-run]
 #
@@ -23,10 +22,26 @@ VERSION_FILE="$SKILL_DIR/.skill-version"
 # Files that are SKILL-OWNED (safe to overwrite on update)
 # Everything else is USER-OWNED and never touched.
 SKILL_OWNED_FILES=(
+  "README.md"
   "SKILL.md"
   "scripts/genviral.sh"
-  "references/analytics-loop.md"
-  "references/competitor-research.md"
+  "scripts/update-skill.sh"
+  "docs/setup.md"
+  "docs/api/accounts-files.md"
+  "docs/api/analytics.md"
+  "docs/api/errors.md"
+  "docs/api/folders.md"
+  "docs/api/packs.md"
+  "docs/api/pipeline.md"
+  "docs/api/posts.md"
+  "docs/api/slideshows.md"
+  "docs/api/studio.md"
+  "docs/api/subscription.md"
+  "docs/api/templates.md"
+  "docs/prompts/hooks.md"
+  "docs/prompts/slideshow.md"
+  "docs/references/analytics-loop.md"
+  "docs/references/competitor-research.md"
 )
 
 DRY_RUN=false

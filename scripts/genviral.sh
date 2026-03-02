@@ -35,6 +35,8 @@
 #   duplicate | duplicate-slideshow Duplicate slideshow
 #   delete | delete-slideshow       Delete slideshow
 #   list-slideshows                 List slideshows
+#   copy-tiktok-preview             Preview TikTok slideshow import inputs
+#   copy-tiktok-import              Import TikTok slideshow into editable draft
 #
 # Pack Commands:
 #   list-packs                      List image packs
@@ -422,9 +424,21 @@ validate_iso_datetime_offset() {
 validate_tiktok_music_url() {
     local option_name="$1"
     local value="$2"
+    local lowered
+    lowered="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
 
     [[ "$value" =~ ^https?:// ]] || die "--${option_name} must be a valid URL. Got: $value"
-    [[ "${value,,}" == *"tiktok.com"* ]] || die "--${option_name} must point to tiktok.com. Got: $value"
+    [[ "$lowered" == *"tiktok.com"* ]] || die "--${option_name} must point to tiktok.com. Got: $value"
+}
+
+validate_tiktok_url() {
+    local option_name="$1"
+    local value="$2"
+    local lowered
+    lowered="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+
+    [[ "$value" =~ ^https?:// ]] || die "--${option_name} must be a valid URL. Got: $value"
+    [[ "$lowered" == *"tiktok.com"* ]] || die "--${option_name} must point to tiktok.com. Got: $value"
 }
 
 validate_uuid() {
@@ -549,6 +563,23 @@ read_json_file() {
     printf '%s' "$content"
 }
 
+parse_url_array_json() {
+    local option_name="$1"
+    local json="$2"
+
+    validate_json_string "$option_name" "$json"
+    if ! printf '%s' "$json" | jq -e '
+        type == "array"
+        and length > 0
+        and length <= 100
+        and all(.[]; type == "string" and test("^https?://"))
+    ' >/dev/null 2>&1; then
+        die "--${option_name} must be a JSON array of 1-100 valid http(s) URLs."
+    fi
+
+    printf '%s' "$json" | jq -c '.'
+}
+
 # ---------------------------------------------------------------------------
 # Usage
 # ---------------------------------------------------------------------------
@@ -593,6 +624,8 @@ ${BOLD}Slideshow Commands:${NC}
   duplicate | duplicate-slideshow Duplicate slideshow
   delete | delete-slideshow       Delete slideshow
   list-slideshows                 List slideshows
+  copy-tiktok-preview             Preview TikTok slideshow copy inputs
+  copy-tiktok-import              Import TikTok slideshow to editable draft
 
 ${BOLD}Pack Commands:${NC}
   list-packs                      List image packs
@@ -655,12 +688,14 @@ ${BOLD}Examples:${NC}
   genviral.sh accounts
   genviral.sh create-post --caption "Text" --media-type video --media-url "https://..." --accounts "id1,id2"
   genviral.sh generate --prompt "5 discipline quotes" --pack-id PACK_ID --slides 5
+  genviral.sh copy-tiktok-preview --url "https://www.tiktok.com/@creator/photo/7499123456789012345"
+  genviral.sh copy-tiktok-import --url "https://www.tiktok.com/@creator/photo/7499123456789012345" --preview-id PREVIEW_UUID --pack-id PACK_UUID
   genviral.sh update-slideshow --id SLIDESHOW_ID --status draft --settings-json '{"aspect_ratio":"9:16"}'
   genviral.sh analytics-summary --range 30d --platforms tiktok,instagram
   genviral.sh analytics-target-create --platform tiktok --identifier @brand --alias "Brand HQ"
   genviral.sh trend-brief --keyword "morning routine" --range 7d --limit 10
   genviral.sh studio-models --mode image
-  genviral.sh studio-generate-image --model-id "google/nano-banana" --prompt "A sunset beach" --aspect-ratio "16:9"
+  genviral.sh studio-generate-image --model-id "google/nano-banana-2" --prompt "A sunset beach" --aspect-ratio "16:9"
   genviral.sh studio-generate-video --model-id "openai/sora-2" --prompt "Drone over neon city" --duration-seconds 8
   genviral.sh studio-video-status --video-id VIDEO_UUID --poll
   genviral.sh subscription
@@ -2595,6 +2630,168 @@ cmd_list_slideshows() {
 }
 
 # ---------------------------------------------------------------------------
+# copy-tiktok-preview
+# ---------------------------------------------------------------------------
+cmd_copy_tiktok_preview() {
+    local url=""
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --url)  url="$2"; shift 2 ;;
+            --json) json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "url" "$url"
+    validate_tiktok_url "url" "$url"
+
+    info "Fetching TikTok slideshow preview..."
+
+    local payload
+    payload="$(jq -n --arg url "$url" '{url: $url}')"
+
+    local response
+    response="$(api_call POST "/slideshows/copy-tiktok/preview" "$payload")"
+
+    local data
+    data="$(printf '%s' "$response" | jq '.data // {}')"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$data"
+        return
+    fi
+
+    local preview_id slide_count total_slides capped estimated_credits source_url
+    preview_id="$(printf '%s' "$data" | jq -r '.preview_id // ""')"
+    slide_count="$(printf '%s' "$data" | jq -r '.slide_count // 0')"
+    total_slides="$(printf '%s' "$data" | jq -r '.total_slides // 0')"
+    capped="$(printf '%s' "$data" | jq -r '.capped // false')"
+    estimated_credits="$(printf '%s' "$data" | jq -r '.estimated_credits // 0')"
+    source_url="$(printf '%s' "$data" | jq -r '.source_url // ""')"
+
+    ok "TikTok preview ready: $preview_id"
+    step "  Source: $source_url"
+    step "  Slides: $slide_count/$total_slides (capped=$capped)"
+    step "  Estimated credits: $estimated_credits"
+
+    printf '%s' "$data"
+}
+
+# ---------------------------------------------------------------------------
+# copy-tiktok-import
+# ---------------------------------------------------------------------------
+cmd_copy_tiktok_import() {
+    local url=""
+    local preview_id=""
+    local title=""
+    local pack_id=""
+    local pack_images_csv=""
+    local pack_images_json=""
+    local pack_images_file=""
+    local product_id=""
+    local json_output=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --url)               url="$2"; shift 2 ;;
+            --preview-id)        preview_id="$2"; shift 2 ;;
+            --title)             title="$2"; shift 2 ;;
+            --pack-id)           pack_id="$2"; shift 2 ;;
+            --pack-images)       pack_images_csv="$2"; shift 2 ;;
+            --pack-images-json)  pack_images_json="$2"; shift 2 ;;
+            --pack-images-file)  pack_images_file="$2"; shift 2 ;;
+            --product-id)        product_id="$2"; shift 2 ;;
+            --json)              json_output=true; shift ;;
+            *) die "Unknown option: $1" ;;
+        esac
+    done
+
+    require_arg "url" "$url"
+    validate_tiktok_url "url" "$url"
+    [[ -n "$preview_id" ]] && validate_uuid "preview-id" "$preview_id"
+    [[ -n "$pack_id" ]] && validate_uuid "pack-id" "$pack_id"
+    [[ -n "$product_id" ]] && validate_uuid "product-id" "$product_id"
+
+    if [[ -n "$title" ]]; then
+        ((${#title} <= 200)) || die "--title max length is 200 characters"
+    fi
+
+    local pack_images_source_count=0
+    [[ -n "$pack_images_csv" ]] && pack_images_source_count=$((pack_images_source_count + 1))
+    [[ -n "$pack_images_json" ]] && pack_images_source_count=$((pack_images_source_count + 1))
+    [[ -n "$pack_images_file" ]] && pack_images_source_count=$((pack_images_source_count + 1))
+    (( pack_images_source_count <= 1 )) \
+        || die "Use only one of --pack-images, --pack-images-json, or --pack-images-file."
+
+    if [[ -n "$pack_images_file" ]]; then
+        pack_images_json="$(read_json_file "$pack_images_file")"
+    fi
+
+    local pack_images_array=""
+    if [[ -n "$pack_images_json" ]]; then
+        pack_images_array="$(parse_url_array_json "pack-images-json" "$pack_images_json")"
+    elif [[ -n "$pack_images_csv" ]]; then
+        pack_images_array="$(split_csv_to_json_array "$pack_images_csv")"
+        if ! printf '%s' "$pack_images_array" | jq -e '
+            type == "array"
+            and length > 0
+            and length <= 100
+            and all(.[]; type == "string" and test("^https?://"))
+        ' >/dev/null 2>&1; then
+            die "--pack-images must be a comma-separated list of 1-100 valid http(s) URLs."
+        fi
+    fi
+
+    if [[ -n "$pack_id" && -n "$pack_images_array" ]]; then
+        die "Provide exactly one of --pack-id or --pack-images/--pack-images-json/--pack-images-file."
+    fi
+    if [[ -z "$pack_id" && -z "$pack_images_array" ]]; then
+        die "Provide exactly one of --pack-id or --pack-images/--pack-images-json/--pack-images-file."
+    fi
+
+    info "Importing TikTok slideshow..."
+    step "  URL: $url"
+    [[ -n "$preview_id" ]] && step "  Preview ID: $preview_id"
+    [[ -n "$pack_id" ]] && step "  Pack ID: $pack_id"
+    [[ -n "$pack_images_array" ]] && step "  Pack images: $(printf '%s' "$pack_images_array" | jq 'length')"
+
+    local payload='{}'
+    payload="$(printf '%s' "$payload" | jq --arg v "$url" '. + {url: $v}')"
+    [[ -n "$preview_id" ]] && payload="$(printf '%s' "$payload" | jq --arg v "$preview_id" '. + {preview_id: $v}')"
+    [[ -n "$title" ]] && payload="$(printf '%s' "$payload" | jq --arg v "$title" '. + {title: $v}')"
+    [[ -n "$pack_id" ]] && payload="$(printf '%s' "$payload" | jq --arg v "$pack_id" '. + {pack_id: $v}')"
+    [[ -n "$pack_images_array" ]] && payload="$(printf '%s' "$payload" | jq --argjson v "$pack_images_array" '. + {pack_images: $v}')"
+    [[ -n "$product_id" ]] && payload="$(printf '%s' "$payload" | jq --arg v "$product_id" '. + {product_id: $v}')"
+
+    local response
+    response="$(api_call POST "/slideshows/copy-tiktok/import" "$payload")"
+
+    local data
+    data="$(printf '%s' "$response" | jq '.data // {}')"
+
+    if [[ "$json_output" == true ]]; then
+        printf '%s' "$data"
+        return
+    fi
+
+    local slideshow_id slide_count total_slides credits_used used_cached_preview
+    slideshow_id="$(printf '%s' "$data" | jq -r '.slideshow.id // ""')"
+    slide_count="$(printf '%s' "$data" | jq -r '.slide_count // 0')"
+    total_slides="$(printf '%s' "$data" | jq -r '.total_slides // 0')"
+    credits_used="$(printf '%s' "$data" | jq -r '.credits_used // 0')"
+    used_cached_preview="$(printf '%s' "$data" | jq -r '.used_cached_preview // false')"
+
+    ok "TikTok slideshow imported: $slideshow_id"
+    step "  Slides: $slide_count/$total_slides"
+    step "  Credits used: $credits_used"
+    step "  Used cached preview: $used_cached_preview"
+
+    printf '%s' "$data"
+}
+
+# ---------------------------------------------------------------------------
 # post-draft (legacy TikTok-focused command)
 # ---------------------------------------------------------------------------
 cmd_post_draft() {
@@ -3409,7 +3606,19 @@ cmd_studio_generate_image() {
     # Build image_urls array if provided (comma-separated)
     local image_urls_json="null"
     if [[ -n "$image_urls" ]]; then
-        image_urls_json="$(printf '%s' "$image_urls" | jq -R 'split(",")')"
+        image_urls_json="$(printf '%s' "$image_urls" | jq -R '
+            split(",")
+            | map(gsub("^\\s+|\\s+$"; ""))
+            | map(select(length > 0))
+        ')"
+
+        if ! printf '%s' "$image_urls_json" | jq -e '
+            type == "array"
+            and length > 0
+            and all(.[]; type == "string" and test("^https?://"))
+        ' >/dev/null 2>&1; then
+            die "--image-urls must be a comma-separated list of valid http(s) URLs."
+        fi
     fi
 
     # Build payload
@@ -3871,6 +4080,8 @@ case "$COMMAND" in
     duplicate|duplicate-slideshow)    check_auth; cmd_duplicate "$@" ;;
     delete|delete-slideshow)          check_auth; cmd_delete "$@" ;;
     list-slideshows)                  check_auth; cmd_list_slideshows "$@" ;;
+    copy-tiktok-preview)              check_auth; cmd_copy_tiktok_preview "$@" ;;
+    copy-tiktok-import)               check_auth; cmd_copy_tiktok_import "$@" ;;
 
     # Pack Commands
     list-packs)                       check_auth; cmd_list_packs "$@" ;;

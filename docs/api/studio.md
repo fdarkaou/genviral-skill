@@ -36,7 +36,7 @@ genviral.sh studio-models --json           # raw JSON output
 ### Response Data
 
 Each model includes:
-- `id` - Model ID to use in generation requests (e.g., `google/nano-banana`)
+- `id` - Model ID to use in generation requests (e.g., `google/nano-banana-2`)
 - `mode` - `image` or `video`
 - `name` - Display name
 - `provider` - Provider label
@@ -55,13 +55,13 @@ Generate one AI image synchronously. Returns hosted output URL immediately.
 ```bash
 # Basic image generation
 genviral.sh studio-generate-image \
-  --model-id "google/nano-banana" \
+  --model-id "google/nano-banana-2" \
   --prompt "A cinematic beach sunset with palm trees" \
   --aspect-ratio "16:9"
 
 # With output format
 genviral.sh studio-generate-image \
-  --model-id "google/nano-banana" \
+  --model-id "google/nano-banana-2" \
   --prompt "Minimalist product photo, white background" \
   --output-format jpeg \
   --aspect-ratio "1:1"
@@ -74,9 +74,15 @@ genviral.sh studio-generate-image \
 
 # With model-specific raw params
 genviral.sh studio-generate-image \
-  --model-id "google/nano-banana" \
+  --model-id "google/nano-banana-2" \
   --prompt "Abstract art" \
   --raw-params '{"seed": 42}'
+
+# TikTok copy remix with product context
+genviral.sh studio-generate-image \
+  --model-id "google/nano-banana-2" \
+  --image-urls "https://source-slide-1.jpg" \
+  --prompt "Create a visually similar but original ad image for PRODUCT_NAME. Keep the same pacing and focal structure, but use new elements that fit PRODUCT_CONTEXT."
 ```
 
 ### Options
@@ -94,6 +100,8 @@ genviral.sh studio-generate-image \
 | `--scale-factor` | number | No | Upscale factor |
 | `--raw-params` | JSON | No | Model-specific passthrough params |
 | `--json` | flag | No | Output raw JSON data |
+
+`google/nano-banana-2` is recommended for TikTok slideshow remix workflows where you want concept continuity from a reference image while generating a new original variant.
 
 ### Response
 
@@ -206,7 +214,7 @@ genviral.sh studio-models --mode image
 
 # 2. Generate image
 genviral.sh studio-generate-image \
-  --model-id "google/nano-banana" \
+  --model-id "google/nano-banana-2" \
   --prompt "Your prompt" \
   --aspect-ratio "9:16"
 # → instant output_url

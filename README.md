@@ -58,6 +58,19 @@ export GENVIRAL_API_KEY="your_public_id.your_secret"
   --media-urls "url1,url2,url3,url4,url5" \
   --accounts ACCOUNT_ID
 
+# Copy an existing TikTok slideshow into an editable draft
+./scripts/genviral.sh copy-tiktok-preview --url "https://www.tiktok.com/@creator/photo/7499123456789012345"
+./scripts/genviral.sh copy-tiktok-import \
+  --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
+  --preview-id PREVIEW_UUID \
+  --pack-id PACK_UUID
+
+# Generate a "similar but new" variation using Studio + NanoBanana
+./scripts/genviral.sh studio-generate-image \
+  --model-id "google/nano-banana-2" \
+  --image-urls "https://source-slide-url.jpg" \
+  --prompt "Create a new original ad image inspired by this slide, aligned with PRODUCT_CONTEXT."
+
 # Check performance
 ./scripts/genviral.sh analytics-summary --range 30d
 ```
@@ -86,7 +99,7 @@ genviral/
     api/
       accounts-files.md     # accounts, upload, list-files
       posts.md              # create-post, update-post, retry, list, get, delete
-      slideshows.md         # generate, render, review, update, text styles, fonts
+      slideshows.md         # generate/render/update + TikTok copy preview/import + text styles
       packs.md              # pack CRUD + mandatory smart image selection workflow
       templates.md          # template CRUD, create-from-slideshow
       analytics.md          # analytics summary, posts, targets, refresh
@@ -116,7 +129,7 @@ genviral/
     competitor-research.md  # How to research competitors
 
   scripts/
-    genviral.sh             # 42+ commands wrapping every Partner API endpoint
+    genviral.sh             # 44+ commands wrapping every Partner API endpoint
     update-skill.sh         # Self-updater (keeps skill files current, never touches workspace/)
 
   prompts/
@@ -130,7 +143,7 @@ genviral/
 |----------|----------|
 | **Accounts & Files** | `accounts`, `upload`, `list-files` |
 | **Posts** | `create-post`, `update-post`, `retry-posts`, `list-posts`, `get-post`, `delete-posts` |
-| **Slideshows** | `generate`, `render`, `review`, `update`, `regenerate-slide`, `duplicate`, `delete`, `list-slideshows` |
+| **Slideshows** | `generate`, `render`, `review`, `update`, `regenerate-slide`, `duplicate`, `delete`, `list-slideshows`, `copy-tiktok-preview`, `copy-tiktok-import` |
 | **Packs** | `list-packs`, `get-pack`, `create-pack`, `update-pack`, `delete-pack`, `add-pack-image`, `delete-pack-image` |
 | **Templates** | `list-templates`, `get-template`, `create-template`, `update-template`, `delete-template`, `create-template-from-slideshow` |
 | **Analytics & Trends** | `analytics-summary`, `analytics-posts`, `analytics-targets`, `analytics-target-create`, `analytics-target-refresh`, `analytics-refresh`, `analytics-workspace-suggestions`, `trend-brief` |
@@ -149,7 +162,7 @@ bash scripts/update-skill.sh --dry-run # preview only, no changes
 bash scripts/update-skill.sh --force   # force re-apply even if already current
 ```
 
-**Skill-owned (updated automatically):** `SKILL.md`, `scripts/`, `docs/` (all subdirs)
+**Skill-owned (updated automatically):** `README.md`, `SKILL.md`, `scripts/`, `docs/` (all subdirs)
 
 **User-owned (never touched):** `workspace/` — your product context, hooks, performance logs, and content data are always preserved.
 

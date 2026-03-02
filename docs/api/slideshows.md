@@ -225,3 +225,89 @@ genviral.sh list-slideshows
 genviral.sh list-slideshows --status rendered --search "hook" --limit 20 --offset 0
 genviral.sh list-slideshows --json
 ```
+
+---
+
+## copy-tiktok-preview
+Validate a TikTok slideshow/photo URL before import and get a short-lived preview token.
+
+```bash
+genviral.sh copy-tiktok-preview --url "https://www.tiktok.com/@creator/photo/7499123456789012345"
+genviral.sh copy-tiktok-preview --url "https://www.tiktok.com/@creator/photo/7499123456789012345" --json
+```
+
+Returns:
+- `preview_id` (cache token, valid for about 10 minutes)
+- `source_url` (expanded TikTok URL)
+- `images[]` (capped preview images)
+- `slide_count`, `total_slides`, `capped`
+- `estimated_credits`
+
+---
+
+## copy-tiktok-import
+Import a TikTok slideshow into an editable Genviral draft with OCR-mapped text overlays.
+
+```bash
+# Import using a pack ID
+genviral.sh copy-tiktok-import \
+  --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
+  --preview-id PREVIEW_UUID \
+  --pack-id PACK_UUID \
+  --title "Copied Hook Variant"
+
+# Import using direct pack image URLs (comma-separated)
+genviral.sh copy-tiktok-import \
+  --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
+  --pack-images "https://cdn.example.com/pack-1.jpg,https://cdn.example.com/pack-2.jpg"
+
+# Import using JSON file of image URLs
+genviral.sh copy-tiktok-import \
+  --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
+  --pack-images-file ./pack-images.json \
+  --product-id PRODUCT_UUID
+```
+
+Options:
+- `--url` (required, must be a TikTok URL)
+- `--preview-id` (optional UUID from `copy-tiktok-preview`)
+- `--title` (optional, max 200 chars)
+- `--pack-id` (optional UUID)
+- `--pack-images` (optional comma-separated URLs)
+- `--pack-images-json` (optional JSON array string of URLs)
+- `--pack-images-file` (optional JSON file containing URL array)
+- `--product-id` (optional UUID)
+- `--json` (print JSON only)
+
+Validation rules:
+- Provide exactly one pack source: `--pack-id` or one of `--pack-images*`.
+- `--pack-images*` accepts 1-100 `http(s)` URLs.
+- `--preview-id` is optional; if missing/expired, API refetches TikTok preview data.
+
+### TikTok Copy -> Studio Remix (recommended)
+
+Use this when you want "same concept, new visuals" instead of a direct copy.
+
+```bash
+# 1) Preview source slideshow
+genviral.sh copy-tiktok-preview \
+  --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
+  --json > /tmp/tiktok-preview.json
+
+# 2) Import (text OCR + editable slide draft)
+genviral.sh copy-tiktok-import \
+  --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
+  --preview-id PREVIEW_UUID \
+  --pack-id PACK_UUID
+
+# 3) Create image variations with NanoBanana using each source slide image
+genviral.sh studio-generate-image \
+  --model-id "google/nano-banana-2" \
+  --image-urls "https://source-slide-url.jpg" \
+  --prompt "Keep composition rhythm, but create a new scene aligned with PRODUCT_CONTEXT. Preserve clarity for overlaid text."
+```
+
+Prompt guidance for step 3:
+- Include product context (what is sold, audience, visual constraints).
+- Ask for "inspired by" not "copy".
+- Keep high-contrast areas for text overlays (center-weighted composition works best).
