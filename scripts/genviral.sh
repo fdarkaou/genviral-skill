@@ -697,6 +697,7 @@ ${BOLD}Examples:${NC}
   genviral.sh studio-models --mode image
   genviral.sh studio-generate-image --model-id "google/nano-banana-2" --prompt "A sunset beach" --aspect-ratio "16:9"
   genviral.sh studio-generate-video --model-id "openai/sora-2" --prompt "Drone over neon city" --duration-seconds 8
+  # Call studio-models --mode video before relying on --voice-id; direct voice control is model-specific
   genviral.sh studio-video-status --video-id VIDEO_UUID --poll
   genviral.sh subscription
   genviral.sh post-draft --id SLIDESHOW_ID --caption "Text" --account-ids "id" --force-media-upload-cap

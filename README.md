@@ -75,6 +75,11 @@ export GENVIRAL_API_KEY="your_public_id.your_secret"
 ./scripts/genviral.sh analytics-summary --range 30d
 ```
 
+For Studio video generation, call `./scripts/genviral.sh studio-models --mode video`
+before relying on `--voice-id`. Today direct voice control is only exposed for
+explicit talking/lipsync models; prompt-driven audio models like Sora/Veo may
+use `--speech-text` as guidance without honoring `--voice-id`.
+
 ## Installation
 
 Clone into your OpenClaw skills directory:
