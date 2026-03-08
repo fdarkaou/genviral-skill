@@ -697,7 +697,7 @@ ${BOLD}Examples:${NC}
   genviral.sh studio-models --mode image
   genviral.sh studio-generate-image --model-id "google/nano-banana-2" --prompt "A sunset beach" --aspect-ratio "16:9"
   genviral.sh studio-generate-video --model-id "openai/sora-2" --prompt "Drone over neon city" --duration-seconds 8
-  # Call studio-models --mode video before relying on --voice-id; direct voice control is model-specific
+  # Call studio-models --mode video before relying on speech-specific flags; Sora/Veo are prompt-only
   genviral.sh studio-video-status --video-id VIDEO_UUID --poll
   genviral.sh subscription
   genviral.sh post-draft --id SLIDESHOW_ID --caption "Text" --account-ids "id" --force-media-upload-cap
@@ -3705,6 +3705,14 @@ cmd_studio_generate_video() {
     done
 
     require_arg "model-id" "$model_id"
+
+    case "$model_id" in
+        openai/sora-2|openai/sora-2-pro|google/veo-3|google/veo-3-fast)
+            [[ -n "$speech_text" ]] && die "--speech-text is not supported for $model_id. Put dialogue inside --prompt instead."
+            [[ -n "$voice_id" ]] && die "--voice-id is not supported for $model_id. This model is prompt-only."
+            [[ -n "$audio_url" ]] && die "--audio-url is not supported for $model_id. This model is prompt-only."
+            ;;
+    esac
 
     # Build params object
     local params_obj="{}"

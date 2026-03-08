@@ -48,10 +48,10 @@ Each model includes:
 
 For video models, treat `inputs.optional` as the source of truth for speech
 controls:
-- If `voice_id` / `audio_url` are listed, the model supports explicit
-  speech-input or lipsync flow.
-- If only `speech_text` is listed, Genviral may use it as prompt guidance
-  without direct voice control.
+- If `speech_text` / `voice_id` / `audio_url` are listed, the model supports
+  explicit speech-input or lipsync flow.
+- If those fields are absent, the model is prompt-only. Put any desired
+  dialogue directly in `--prompt`.
 
 ---
 
@@ -156,12 +156,12 @@ genviral.sh studio-generate-video \
 | Flag | Type | Required | Description |
 |------|------|----------|-------------|
 | `--model-id` | string | Yes | Model ID from `studio-models` |
-| `--prompt` | string | No | Main generation prompt |
-| `--speech-text` | string | No | Narration text. On explicit talking/lipsync models it becomes speech input; on prompt-driven audio models it is treated as prompt guidance |
+| `--prompt` | string | No | Main generation prompt. For prompt-driven models such as Sora/Veo, include any desired dialogue here |
+| `--speech-text` | string | No | Narration text for explicit talking/lipsync models only |
 | `--voice-id` | string | No | Voice identifier for explicit talking/lipsync models only (for example `george`, `sarah`, `aria`) |
 | `--image-url` | string | No | Input image URL for image-to-video |
 | `--video-url` | string | No | Input video URL for video-to-video |
-| `--audio-url` | string | No | External audio URL for explicit speech/lipsync models |
+| `--audio-url` | string | No | External audio URL for explicit speech/lipsync models only |
 | `--negative-prompt` | string | No | Negative prompt |
 | `--duration-seconds` | number | No | Video duration in seconds |
 | `--aspect-ratio` | string | No | e.g., `16:9`, `9:16` |
@@ -182,14 +182,12 @@ Returns `video_id`, `status` (`processing`), `credits_used`, `model_id`, and `pr
 - `veed/fabric-1.0` and `creatify/lipsync` are the current explicit
   speech-input models. They honor `--voice-id`, and Genviral falls back to a
   default voice if the provided value is omitted or unrecognized.
-- Prompt-driven audio models such as `openai/sora-2` and `google/veo-3` do not
-  currently expose direct `voice_id` control through Genviral. If you pass
-  `--speech-text`, Genviral folds it into the prompt so the model has stronger
-  dialogue guidance, but spoken output is still provider-driven and not
-  guaranteed verbatim.
+- Prompt-driven audio models such as `openai/sora-2` and `google/veo-3` are
+  prompt-only in Genviral. Put any desired dialogue directly into `--prompt`
+  and do not pass `--speech-text`, `--voice-id`, or `--audio-url`.
 - If you need deterministic voice control, call `studio-models --mode video`
-  first and only rely on `--voice-id` for models whose `inputs.optional`
-  includes `voice_id`.
+  first and only rely on speech-specific flags when `inputs.optional` includes
+  `speech_text` / `voice_id` / `audio_url`.
 
 ---
 

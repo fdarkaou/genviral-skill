@@ -76,9 +76,10 @@ export GENVIRAL_API_KEY="your_public_id.your_secret"
 ```
 
 For Studio video generation, call `./scripts/genviral.sh studio-models --mode video`
-before relying on `--voice-id`. Today direct voice control is only exposed for
-explicit talking/lipsync models; prompt-driven audio models like Sora/Veo may
-use `--speech-text` as guidance without honoring `--voice-id`.
+before relying on speech-specific flags. Today `--speech-text`, `--voice-id`,
+and `--audio-url` are only exposed for explicit talking/lipsync models;
+prompt-driven models like Sora/Veo are prompt-only, so put any desired dialogue
+directly inside `--prompt`.
 
 ## Installation
 
