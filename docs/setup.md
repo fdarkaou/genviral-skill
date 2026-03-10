@@ -122,9 +122,10 @@ The skill gets smarter over time, but only if you actually track results.
 After the first post goes live (give it 48-72 hours minimum before checking):
 
 1. Pull analytics: `genviral.sh analytics-posts --range 7d --sort-by views --sort-order desc`
-2. Update `workspace/performance/hook-tracker.json` with the actual view and engagement numbers
-3. Apply the diagnostic framework (see `docs/references/analytics-loop.md`)
-4. Set up a weekly review routine -- every Monday, check the previous week's posts and adjust the content plan
+2. For BYO TikTok drafts, match rows by `genviralPostId` or `externalId` rather than analytics `id`
+3. Update `workspace/performance/hook-tracker.json` with the actual view and engagement numbers
+4. Apply the diagnostic framework (see `docs/references/analytics-loop.md`)
+5. Set up a weekly review routine -- every Monday, check the previous week's posts and adjust the content plan
 
 Explain this to your human:
 > "We will check how each post performs after a few days and use that data to figure out what hooks and formats to double down on. It takes a few weeks to build enough data to see patterns, but once we do, the content gets measurably better."
@@ -265,4 +266,3 @@ If you're using the skill outside OpenClaw, you can still automate with system c
 - Run `scripts/genviral.sh` commands directly in your own cron jobs
 - Or run an agent runner with the same prompts used above
 - Keep the same guardrails: pinned_images, visual review gate, and performance logging in `workspace/performance/log.json`
-

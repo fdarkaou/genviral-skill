@@ -93,6 +93,8 @@ Pinterest options:
 
 **Draft timing note:** For TikTok draft uploads (`post_mode=MEDIA_UPLOAD`), `pending` is normal. It means the post is queued and waiting for the posting worker (typically every ~5 minutes). `pending` can persist for a few minutes before the account state flips to `posted`. Check `accounts.states[].last_attempted_at` and `published_at` before concluding it failed.
 
+**Draft ID note:** `create-post` returns the Genviral post ID immediately. For BYO TikTok draft uploads (`MEDIA_UPLOAD`), that is not the final public TikTok video ID; TikTok only exposes the public `platformPostId` after the draft is actually published in the TikTok app. Later, when pulling `analytics-posts`, use `genviralPostId` or `externalId` to correlate performance back to your own record. Treat `analyticsId`/legacy `id` there as the analytics-row ID.
+
 **Draft cap guardrail:** TikTok may reject draft uploads with `spam_risk_too_many_pending_share` when you exceed ~5 pending-share uploads in a rolling 24h window. The CLI now enforces a guardrail:
 - Warn at 4 uploads in last 24h per account
 - Block at 5+ by default

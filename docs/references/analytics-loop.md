@@ -33,9 +33,13 @@ genviral.sh analytics-posts --range 7d --platforms tiktok --json
 
 Use this to see individual post performance. Sort by views descending to immediately surface winners.
 
-The output gives you per-post: views, likes, comments, shares, saves, and published timestamp.
+The output gives you per-post: views, likes, comments, shares, saves, published timestamp, and multiple IDs:
+- `analyticsId` / legacy `id` = analytics row
+- `platformPostId` = platform-native post/video ID
+- `genviralPostId` = originating Genviral post ID
+- `externalId` = originating Partner API `external_id`
 
-Cross-reference the post IDs here with entries in `workspace/performance/hook-tracker.json` to connect metrics back to the specific hook, hook category, and CTA used.
+Cross-reference using `genviralPostId` first, then `externalId` if needed, to connect metrics back to the specific hook, hook category, and CTA used.
 
 ---
 
@@ -47,7 +51,9 @@ genviral.sh analytics-posts --range 30d --sort-by views --sort-order desc --json
 ```
 
 Save or parse the output. For each post, note:
-- `post_id`
+- `genviralPostId` (preferred)
+- `externalId` (if your workflow uses it)
+- `analyticsId` (analytics-row reference only)
 - `views`
 - `likes`
 - `comments`
@@ -56,7 +62,7 @@ Save or parse the output. For each post, note:
 
 **Step 2: Match to hook-tracker**
 
-Open `workspace/performance/hook-tracker.json`. Find each post by `post_id`. Update the `metrics` block:
+Open `workspace/performance/hook-tracker.json`. Find each post by `genviralPostId` (preferred) or your saved `externalId`. Update the `metrics` block:
 ```json
 {
   "views": 47200,

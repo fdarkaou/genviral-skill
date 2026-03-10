@@ -122,7 +122,7 @@ Add an entry to `workspace/performance/hook-tracker.json`:
 ```bash
 genviral.sh analytics-posts --range 7d --sort-by views --sort-order desc --json
 ```
-Match posts to hook-tracker entries by `post_id`. Update metrics, set `last_checked` to now, set `status` to `tracking`.
+Match posts to hook-tracker entries by `genviralPostId` first, then `externalId` if your workflow stores it. Do not use analytics `id` / `analyticsId` for this join. Update metrics, set `last_checked` to now, set `status` to `tracking`.
 
 ### 14. Weekly Review (every Monday)
 Pull analytics, apply diagnostic framework, categorize hooks, write summary in `workspace/performance/weekly-review.md`. See `docs/references/analytics-loop.md`.

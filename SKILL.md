@@ -11,7 +11,7 @@ metadata:
 
 # genviral Partner API Skill
 
-> **TL;DR:** Wraps genviral's Partner API into 60+ bash commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. TikTok copy flow: `copy-tiktok-preview` → `copy-tiktok-import` (with exactly one of `pack_id` or `pack_images`). Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
+> **TL;DR:** Wraps genviral's Partner API into 60+ bash commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. TikTok copy flow: `copy-tiktok-preview` → `copy-tiktok-import` (with exactly one of `pack_id` or `pack_images`). Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Analytics correlation: treat `analyticsId`/`id`, `platformPostId`, and `genviralPostId` as different identifiers; use `genviralPostId` or `externalId` to map analytics rows back to created posts. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
 
 ## What This Skill Does
 
@@ -35,6 +35,13 @@ metadata:
 3. Schedule or publish (for TikTok slideshows, optionally save as drafts so you can add trending audio before publishing — music selection requires human judgment for best results)
 4. Track performance via analytics
 5. Learn and optimize
+
+Important analytics identity rule:
+- `analyticsId` is the analytics-row ID (`id` is a legacy alias of the same value)
+- `platformPostId` is the platform-native post/video ID
+- `genviralPostId` is the originating Genviral post ID when correlation succeeds
+- `externalId` is the originating Partner API `external_id` when present
+- For BYO TikTok `MEDIA_UPLOAD`, the draft/inbox `publish_id` is not the final public TikTok video ID. Correlation is best-effort for recent unresolved drafts after the user actually publishes in TikTok, so older rows can still show `genviralPostId` / `externalId` as `null`.
 
 All configuration in `defaults.yaml`. Secrets via environment variables. Everything posted shows up in the Genviral dashboard.
 
@@ -146,6 +153,15 @@ When the user wants to copy a TikTok slideshow idea but generate new visuals:
 5. Replace slide backgrounds with generated URLs (`update --slides-file ...`) while preserving/editing imported text elements.
 6. Render (`render`) and review (`review`) before posting; never skip visual QA.
 
+## Analytics Correlation Mode (When user asks "match analytics back to posts")
+
+1. Pull `analytics-posts --json`.
+2. Prefer `genviralPostId` for matching analytics rows back to Genviral posts.
+3. If you need the caller's own stable ID, use `externalId`.
+4. Treat `analyticsId`/legacy `id` as the analytics-row identifier only.
+5. Treat `platformPostId` as the platform-native TikTok/Instagram/YouTube post identifier only.
+6. For BYO TikTok drafts (`MEDIA_UPLOAD`), do not assume a draft upload is correlated immediately. The draft `publish_id` becomes matchable only after the human posts from TikTok and Genviral resolves it to the final public TikTok video ID.
+
 ## Non-Negotiable Rules
 
 These apply regardless of what docs you've loaded:
@@ -193,6 +209,7 @@ bash scripts/update-skill.sh --force   # force re-apply even if already current
 - Works with hosted and BYO accounts
 - Posts can be scheduled or queued for immediate publishing
 - TikTok slideshow drafts: use `post_mode: MEDIA_UPLOAD` to save to drafts inbox for audio addition
+- BYO TikTok draft uploads (`MEDIA_UPLOAD`) create the Genviral post immediately, but the final public TikTok video ID exists only after the user publishes in TikTok. In `analytics-posts`, use `genviralPostId` or `externalId` for correlation; treat `analyticsId`/legacy `id` as the analytics-row ID and `platformPostId` as the TikTok-native ID.
 
 ## Meta Ads Skill (Included)
 

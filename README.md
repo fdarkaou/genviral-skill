@@ -75,6 +75,14 @@ export GENVIRAL_API_KEY="your_public_id.your_secret"
 ./scripts/genviral.sh analytics-summary --range 30d
 ```
 
+Analytics identity rule:
+- `analyticsId` is the analytics-row ID (`id` is kept as a legacy alias)
+- `platformPostId` is the platform-native post/video ID
+- `genviralPostId` is the originating Genviral post ID
+- `externalId` is the originating Partner API `external_id`
+
+For BYO TikTok drafts (`post_mode=MEDIA_UPLOAD`), the initial TikTok draft/inbox `publish_id` is not the final public TikTok video ID. Use `genviralPostId` or `externalId` to correlate analytics back to created posts.
+
 For Studio video generation, call `./scripts/genviral.sh studio-models --mode video`
 before relying on speech-specific flags. Today `--speech-text`, `--voice-id`,
 and `--audio-url` are only exposed for explicit talking/lipsync models;

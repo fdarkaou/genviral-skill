@@ -46,6 +46,22 @@ Options:
 - `--sort-order` - `asc` or `desc`
 - `--limit` (max 100), `--offset`
 
+Identity fields in each analytics row:
+- `analyticsId` - explicit analytics-row ID (`id` is kept as a legacy alias)
+- `platformPostId` - platform-native post/video ID
+- `genviralPostId` - originating Genviral post ID when correlation succeeds
+- `externalId` - originating Partner API `external_id` when present
+
+Correlation rule:
+- Use `genviralPostId` or `externalId` to match analytics rows back to created posts.
+- Do not use `id` / `analyticsId` for post correlation; that is the analytics-row identifier.
+- Do not assume `platformPostId` equals the original `create-post` response ID.
+
+BYO TikTok draft note:
+- For TikTok `MEDIA_UPLOAD`, the initial draft/inbox `publish_id` is not the final public TikTok video ID.
+- Analytics correlation is best-effort for recent unresolved drafts after the human publishes the draft in TikTok and Genviral reconciles the draft `publish_id` to the final public `platformPostId`.
+- Older rows can still return `genviralPostId = null` / `externalId = null` until a future async reconciliation or backfill exists.
+
 ---
 
 ## analytics-targets
