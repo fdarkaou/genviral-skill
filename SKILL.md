@@ -1,12 +1,6 @@
 ---
 name: genviral
 description: Complete genviral Partner API automation. Create and schedule posts (video + slideshow) across TikTok, Instagram, and any supported platform. Includes slideshow generation, file uploads, template/pack management, analytics, and full content pipeline automation.
-homepage: https://github.com/fdarkaou/genviral-skill
-metadata:
-  openclaw:
-    emoji: "🎬"
-    requires:
-      bins: ["curl", "jq", "bash"]
 ---
 
 # genviral Partner API Skill
@@ -211,10 +205,10 @@ bash scripts/update-skill.sh --force   # force re-apply even if already current
 - TikTok slideshow drafts: use `post_mode: MEDIA_UPLOAD` to save to drafts inbox for audio addition
 - BYO TikTok draft uploads (`MEDIA_UPLOAD`) create the Genviral post immediately, but the final public TikTok video ID exists only after the user publishes in TikTok. In `analytics-posts`, use `genviralPostId` or `externalId` for correlation; treat `analyticsId`/legacy `id` as the analytics-row ID and `platformPostId` as the TikTok-native ID.
 
-## Meta Ads Skill (Included)
+## Meta Ads Companion (Included)
 
-This repo includes the **meta-ads** skill in the `meta-ads/` directory — an autonomous Meta (Facebook/Instagram) Ads manager and 8-stage AI campaign builder that uses Genviral's Studio API for ad creative generation.
+This repo includes the **meta-ads** companion guide in the `meta-ads/` directory — an autonomous Meta (Facebook/Instagram) Ads manager and 8-stage AI campaign builder that uses Genviral's Studio API for ad creative generation.
 
-See [`meta-ads/SKILL.md`](meta-ads/SKILL.md) for full workflow and setup.
+See [`meta-ads/INSTRUCTIONS.md`](meta-ads/INSTRUCTIONS.md) for the bundled workflow and setup guide.
 
 Also available standalone: [fdarkaou/meta-ads-skill](https://github.com/fdarkaou/meta-ads-skill)
