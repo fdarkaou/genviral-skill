@@ -4,6 +4,7 @@ config.yaml
 
 # Local campaign output (stays on your machine)
 campaign/runs/
+!campaign/runs/*/creatives/
 data/
 
 # Python

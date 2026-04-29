@@ -1,8 +1,11 @@
-# Meta Ads Companion Guide
+---
+name: meta-ads
+description: "Autonomous Meta Ads manager AND campaign builder. Two modes: (1) Daily ops - monitor campaigns, auto-pause bleeders, shift budget to winners, generate copy, deliver morning brief. (2) /meta-campaign - 8-stage campaign builder that takes a landing page URL and produces upload-ready ad creatives (images via Genviral Studio + copy) for 4-5 ad sets. Use when asked to build new Meta ad campaigns or check Meta Ads performance."
+---
 
-Bundled reference guide for autonomous Meta Ads management and campaign building inside `genviral-skill`.
+# Meta Ads Skill
 
-For standalone skill installation, use [fdarkaou/meta-ads-skill](https://github.com/fdarkaou/meta-ads-skill).
+An [OpenClaw](https://openclaw.ai) skill for autonomous Meta Ads management and campaign building.
 
 **Companion skill:** [genviral-skill](https://github.com/fdarkaou/genviral-skill) — image generation in Stage 7 uses the [Genviral Studio API](https://genviral.io).
 
@@ -123,7 +126,7 @@ python3 campaign/scripts/generate_creatives.py --rundir /tmp/test/ --ad-set ad-s
 
 ```
 meta-ads-skill/
-  INSTRUCTIONS.md               ← This file (bundled companion guide)
+  SKILL.md                      ← This file (OpenClaw skill descriptor)
   config.example.yaml           ← Template — copy to config.yaml (gitignored)
   config.yaml                   ← YOUR config (gitignored, never commit)
 

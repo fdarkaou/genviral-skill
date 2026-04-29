@@ -315,6 +315,70 @@ class MetaAPI:
     # AD CREATIVES (for upload)
     # ─────────────────────────────────────────────
 
+    # ─────────────────────────────────────────────
+    # CAMPAIGN & ADSET CREATION
+    # ─────────────────────────────────────────────
+
+    def create_campaign(
+        self,
+        name: str,
+        objective: str = "OUTCOME_SALES",
+        status: str = "PAUSED",
+        special_ad_categories: list = None,
+        daily_budget_cents: int = None,
+        bid_strategy: str = None,
+    ) -> str:
+        """Create a campaign and return its ID."""
+        data = {
+            "name": name,
+            "objective": objective,
+            "status": status,
+            "special_ad_categories": json.dumps(special_ad_categories or []),
+        }
+        if daily_budget_cents is not None:
+            data["daily_budget"] = str(daily_budget_cents)
+        if bid_strategy:
+            data["bid_strategy"] = bid_strategy
+        resp = self._request("POST", f"{self.account_id}/campaigns", data=data)
+        return resp["id"]
+
+    def create_adset(
+        self,
+        name: str,
+        campaign_id: str,
+        daily_budget_cents: int = None,
+        optimization_goal: str = "OFFSITE_CONVERSIONS",
+        billing_event: str = "IMPRESSIONS",
+        bid_strategy: str = "LOWEST_COST_WITHOUT_CAP",
+        targeting: dict = None,
+        promoted_object: dict = None,
+        status: str = "PAUSED",
+        start_time: str = None,
+    ) -> str:
+        """Create an ad set and return its ID."""
+        data = {
+            "name": name,
+            "campaign_id": campaign_id,
+            "optimization_goal": optimization_goal,
+            "billing_event": billing_event,
+            "bid_strategy": bid_strategy,
+            "status": status,
+        }
+        if daily_budget_cents is not None:
+            data["daily_budget"] = str(daily_budget_cents)
+        if targeting:
+            data["targeting"] = json.dumps(targeting)
+        if promoted_object:
+            data["promoted_object"] = json.dumps(promoted_object)
+        if start_time:
+            data["start_time"] = start_time
+        resp = self._request("POST", f"{self.account_id}/adsets", data=data)
+        return resp["id"]
+
+    # ─────────────────────────────────────────────
+    # AD CREATIVE UPLOAD
+    # ─────────────────────────────────────────────
+
     def create_ad_image(self, image_path: str) -> str:
         """Upload an image and return its hash. Uses multipart/form-data for large file support."""
         import uuid

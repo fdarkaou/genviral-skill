@@ -1,84 +1,94 @@
 #!/usr/bin/env python3
 """
-Stage 8: Upload to Meta Ads Manager
-Reads generated creatives from a campaign run and uploads to Meta.
-Imports meta_api.py from the meta-ads skill.
+Stage 8: Full Upload to Meta Ads Manager
+Creates campaign → ad sets → uploads images → creates creatives → creates ads.
+All PAUSED by default.
 
 Usage:
     python3 upload_to_meta.py --rundir runs/genviral-2026-03-02/ --product genviral
-    python3 upload_to_meta.py --rundir runs/genviral-2026-03-02/ --product genviral --activate
     python3 upload_to_meta.py --rundir runs/genviral-2026-03-02/ --product genviral --dry-run
+    python3 upload_to_meta.py --rundir runs/genviral-2026-03-02/ --product genviral --campaign-id 123  # skip campaign creation
 """
 
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
-# Import meta_api from sibling skill
-SKILL_DIR = Path(__file__).parent.parent.parent  # agent/skills/
-META_ADS_SCRIPTS = SKILL_DIR / "meta-ads" / "scripts"
+SCRIPT_DIR = Path(__file__).resolve().parent          # campaign/scripts/
+SKILL_DIR = SCRIPT_DIR.parent.parent.parent            # agent/skills/
+META_ADS_SCRIPTS = SCRIPT_DIR.parent.parent / "scripts"  # meta-ads/scripts/
 sys.path.insert(0, str(META_ADS_SCRIPTS))
 
-try:
-    from meta_api import MetaAPI, load_config
-    META_AVAILABLE = True
-except ImportError:
-    META_AVAILABLE = False
-    print("Warning: meta_api not available. Run from /root/clawd/agent/skills/", file=sys.stderr)
+from meta_api import MetaAPI, load_config
 
 
-def find_creatives(rundir: str) -> dict:
-    """Find all generated images and copy.md files in run directory."""
+def find_ad_sets(rundir: str) -> dict:
+    """Find all ad-set-* dirs with images and copy."""
     rundir_path = Path(rundir)
     ad_sets = {}
-
-    for ad_set_dir in sorted(rundir_path.glob("ad-set-*")):
-        if not ad_set_dir.is_dir():
+    for d in sorted(rundir_path.glob("ad-set-*")):
+        if not d.is_dir():
             continue
-
-        ad_set_name = ad_set_dir.name
-        images = sorted(ad_set_dir.glob("image-*.png")) + sorted(ad_set_dir.glob("image-*.jpg"))
-        copy_file = ad_set_dir / "copy.md"
-
-        ad_sets[ad_set_name] = {
-            "path": str(ad_set_dir),
+        images = sorted(list(d.glob("image-*.png")) + list(d.glob("image-*.jpg")))
+        copy_file = d / "copy.md"
+        brief_file = d / "ad-set-brief.md"
+        ad_sets[d.name] = {
+            "path": str(d),
             "images": [str(img) for img in images],
             "copy_file": str(copy_file) if copy_file.exists() else None,
+            "brief_file": str(brief_file) if brief_file.exists() else None,
             "image_count": len(images),
         }
-
     return ad_sets
 
 
 def parse_copy_md(copy_file: str) -> dict:
-    """Extract primary text, headline, CTA from copy.md."""
+    """Extract primary texts, headlines, descriptions, CTA from copy.md."""
     if not copy_file or not os.path.exists(copy_file):
         return {}
-
     with open(copy_file) as f:
         content = f.read()
 
     result = {}
 
-    # Extract first primary text variation
-    import re
-    body_match = re.search(r'\*\*V1.*?\*\*[:\s]*\n(.*?)(?=\n\*\*V2|\n---|\Z)', content, re.DOTALL)
-    if body_match:
-        result["primary_text"] = body_match.group(1).strip()
+    # Extract all 3 primary text variations
+    primary_texts = []
+    for i, label in enumerate(["V1", "V2", "V3"], 1):
+        pattern = rf'\*\*{label}.*?\*\*[:\s]*\n(.*?)(?=\n\*\*V\d|\n---|\n##|\Z)'
+        match = re.search(pattern, content, re.DOTALL)
+        if match:
+            primary_texts.append(match.group(1).strip())
+    result["primary_texts"] = primary_texts or ["Check out our product"]
 
-    # Extract first headline
-    headline_match = re.search(r'## Headlines.*?\n1\.\s*(.+)', content)
-    if headline_match:
-        result["headline"] = headline_match.group(1).strip()
+    # Extract headlines
+    headlines = []
+    hl_section = re.search(r'## Headlines.*?\n((?:\d+\..*\n?)+)', content)
+    if hl_section:
+        for line in hl_section.group(1).strip().split("\n"):
+            hl = re.sub(r'^\d+\.\s*', '', line).strip()
+            if hl:
+                headlines.append(hl)
+    result["headlines"] = headlines or ["Learn More"]
 
-    # Extract first CTA
-    cta_match = re.search(r'Primary:\s*\[?([^\]\n]+)\]?', content)
+    # Extract descriptions
+    descriptions = []
+    desc_section = re.search(r'## Descriptions.*?\n((?:\d+\..*\n?)+)', content)
+    if desc_section:
+        for line in desc_section.group(1).strip().split("\n"):
+            desc = re.sub(r'^\d+\.\s*', '', line).strip()
+            if desc:
+                descriptions.append(desc)
+    result["descriptions"] = descriptions
+
+    # CTA
+    cta_match = re.search(r'Primary:\s*(.+)', content)
     if cta_match:
-        result["call_to_action"] = cta_match.group(1).strip()
+        result["cta_text"] = cta_match.group(1).strip()
 
-    # Extract LP URL
+    # Link
     url_match = re.search(r'Link:\s*(\S+)', content)
     if url_match:
         result["link_url"] = url_match.group(1).strip()
@@ -86,131 +96,227 @@ def parse_copy_md(copy_file: str) -> dict:
     return result
 
 
-def upload_ad_set(api, product_config: dict, ad_set_name: str, ad_set_data: dict,
-                  activate: bool = False, dry_run: bool = False) -> list:
-    """Upload images and create ads for one ad set. Returns list of created ad IDs."""
-    ad_ids = []
-    copy_data = parse_copy_md(ad_set_data.get("copy_file"))
-
-    primary_text = copy_data.get("primary_text", f"Check out {product_config.get('name', 'our product')}")
-    headline = copy_data.get("headline", "Learn More")
-    link_url = copy_data.get("link_url", product_config.get("lp_url", ""))
-    call_to_action = copy_data.get("call_to_action", "LEARN_MORE")
-
-    # Map CTA text to Meta API enum
-    cta_map = {
-        "Try Free": "TRY_IT",
-        "Sign Up": "SIGN_UP",
-        "Get Started": "GET_STARTED",
-        "Learn More": "LEARN_MORE",
-        "Shop Now": "SHOP_NOW",
-    }
-    cta_type = cta_map.get(call_to_action, "LEARN_MORE")
-
-    page_id = product_config.get("page_id", "")
-    ig_id = product_config.get("ig_account_id", "")
-
-    for image_path in ad_set_data["images"]:
-        image_name = Path(image_path).stem
-        print(f"\n    Processing: {image_name}")
-
-        if dry_run:
-            print(f"    [DRY RUN] Would upload image: {image_path}")
-            print(f"    [DRY RUN] Headline: {headline}")
-            print(f"    [DRY RUN] Primary text: {primary_text[:60]}...")
-            continue
-
-        if not META_AVAILABLE:
-            print(f"    ✗ meta_api not available", file=sys.stderr)
-            continue
-
-        try:
-            # Upload image
-            print(f"    Uploading image...")
-            image_hash = api.create_ad_image(image_path)
-            print(f"    ✓ Image hash: {image_hash[:12]}...")
-
-            # Create creative
-            print(f"    Creating creative...")
-            creative_id = api.create_ad_creative(
-                name=f"{ad_set_name}-{image_name}",
-                page_id=page_id,
-                image_hash=image_hash,
-                message=primary_text,
-                headline=headline,
-                link_url=link_url,
-                call_to_action_type=cta_type,
-                instagram_actor_id=ig_id,
-            )
-            print(f"    ✓ Creative ID: {creative_id}")
-
-            # TODO: Would need adset_id from strategy.md or user input
-            # For now, log what needs to be done
-            print(f"    ℹ️  To create ad: use meta-ads skill's ad_uploader.py with creative_id={creative_id}")
-            ad_ids.append(creative_id)
-
-        except Exception as e:
-            print(f"    ✗ Error: {e}", file=sys.stderr)
-
-    return ad_ids
+CTA_MAP = {
+    "Start Free Trial": "SIGN_UP",
+    "Try Free": "SIGN_UP",
+    "Sign Up": "SIGN_UP",
+    "Get Started": "GET_STARTED",
+    "See How It Works": "LEARN_MORE",
+    "Try Genviral Free": "SIGN_UP",
+    "See It In Action": "LEARN_MORE",
+    "Fix Your Reach": "LEARN_MORE",
+    "Try AI Studio Free": "SIGN_UP",
+    "See the Workflow": "LEARN_MORE",
+    "Join 3,296 Businesses": "SIGN_UP",
+    "Learn More": "LEARN_MORE",
+}
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Meta Uploader — Stage 8")
+    parser = argparse.ArgumentParser(description="Stage 8: Full Upload to Meta")
     parser.add_argument("--rundir", required=True, help="Campaign run directory")
-    parser.add_argument("--product", required=True, help="Product name (from meta-ads config)")
-    parser.add_argument("--activate", action="store_true", help="Activate ads after creating (default: paused)")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be uploaded")
+    parser.add_argument("--product", required=True, help="Product name from config")
+    parser.add_argument("--campaign-id", help="Existing campaign ID (skip creation)")
+    parser.add_argument("--campaign-name", default=None, help="Campaign name")
+    parser.add_argument("--daily-budget", type=float, default=50.0, help="Daily budget in account currency (default: 50)")
+    parser.add_argument("--objective", default="OUTCOME_SALES", help="Campaign objective")
+    parser.add_argument("--custom-event", default="PURCHASE", help="Pixel custom event type")
+    parser.add_argument("--countries", default="US,CA,GB,AU,NZ,AE,SG", help="Comma-separated country codes")
+    parser.add_argument("--age-min", type=int, default=18)
+    parser.add_argument("--age-max", type=int, default=65)
+    parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    print(f"\n📤 Stage 8: Upload to Meta Ads")
+    print(f"\n📤 Stage 8: Full Upload to Meta Ads")
     print(f"   Run dir: {args.rundir}")
     print(f"   Product: {args.product}")
+    print(f"   Budget: €{args.daily_budget}/day CBO")
     if args.dry_run:
         print(f"   Mode: DRY RUN\n")
 
-    # Load ad sets
-    ad_sets = find_creatives(args.rundir)
-    if not ad_sets:
-        print("  No ad-set-* directories found with images.", file=sys.stderr)
+    # Load config
+    config_path = SKILL_DIR / "meta-ads" / "config.yaml"
+    config = load_config(str(config_path))
+    product_config = config.get("products", {}).get(args.product)
+    if not product_config:
+        print(f"  ✗ Product '{args.product}' not found in config", file=sys.stderr)
         sys.exit(1)
 
-    print(f"\n  Found {len(ad_sets)} ad sets:")
+    api = MetaAPI(config["access_token"], product_config["ad_account_id"])
+
+    # Find ad sets
+    ad_sets = find_ad_sets(args.rundir)
+    if not ad_sets:
+        print("  ✗ No ad-set-* directories found.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"   Ad sets found: {len(ad_sets)}")
     for name, data in ad_sets.items():
-        print(f"  - {name}: {data['image_count']} images, copy: {'✓' if data['copy_file'] else '✗'}")
+        print(f"     - {name}: {data['image_count']} images, copy: {'✓' if data['copy_file'] else '✗'}")
 
-    if not args.dry_run and META_AVAILABLE:
-        # Load meta-ads config
-        config_path = SKILL_DIR / "meta-ads" / "config.yaml"
-        if not config_path.exists():
-            print(f"\n  ✗ meta-ads config not found at {config_path}", file=sys.stderr)
-            sys.exit(1)
+    page_id = product_config.get("page_id", "")
+    pixel_id = product_config.get("pixel_id", "")
+    link_url = product_config.get("lp_url", "https://genviral.io")
+    ig_id = product_config.get("ig_account_id", "")
 
-        config = load_config(str(config_path))
-        product_config = config.get("products", {}).get(args.product)
-        if not product_config:
-            print(f"\n  ✗ Product '{args.product}' not found in meta-ads config", file=sys.stderr)
-            print(f"  Available: {list(config.get('products', {}).keys())}", file=sys.stderr)
-            sys.exit(1)
+    countries = [c.strip() for c in args.countries.split(",")]
+    budget_cents = int(args.daily_budget * 100)
 
-        api = MetaAPI(config["access_token"], product_config["ad_account_id"])
+    # ── Step 1: Create Campaign ──
+    campaign_name = args.campaign_name or f"GV/2026/Q1/ACQ"
+    campaign_id = args.campaign_id
+
+    if not campaign_id:
+        if args.dry_run:
+            print(f"\n  [DRY RUN] Would create campaign: {campaign_name}")
+            campaign_id = "DRY_RUN_CAMPAIGN"
+        else:
+            print(f"\n  Creating campaign: {campaign_name}")
+            campaign_id = api.create_campaign(
+                name=campaign_name,
+                objective=args.objective,
+                status="PAUSED",
+                daily_budget_cents=budget_cents,
+                bid_strategy="LOWEST_COST_WITHOUT_CAP",
+            )
+            print(f"  ✓ Campaign ID: {campaign_id}")
     else:
-        config = {"products": {args.product: {"name": args.product, "page_id": "TEST", "lp_url": "#"}}}
-        product_config = config["products"][args.product]
-        api = None
+        print(f"\n  Using existing campaign: {campaign_id}")
 
-    print()
-    total_uploaded = 0
+    # ── Step 2: Create Ad Sets + Ads ──
+    targeting = {
+        "age_min": args.age_min,
+        "age_max": args.age_max,
+        "geo_locations": {
+            "countries": countries,
+            "location_types": ["home", "recent"],
+        },
+        "targeting_automation": {
+            "advantage_audience": 1,
+        },
+    }
+
+    promoted_object = {
+        "pixel_id": pixel_id,
+        "custom_event_type": args.custom_event,
+    }
+
+    total_ads = 0
+    results = {}
+
     for ad_set_name, ad_set_data in ad_sets.items():
-        print(f"\n  📦 {ad_set_name}")
-        ad_ids = upload_ad_set(api, product_config, ad_set_name, ad_set_data,
-                               activate=args.activate, dry_run=args.dry_run)
-        total_uploaded += len(ad_ids)
+        copy_data = parse_copy_md(ad_set_data.get("copy_file"))
+        primary_texts = copy_data.get("primary_texts", [""])
+        headlines = copy_data.get("headlines", ["Learn More"])
+        descriptions = copy_data.get("descriptions", [])
+        cta_text = copy_data.get("cta_text", "Learn More")
+        cta_type = CTA_MAP.get(cta_text, "LEARN_MORE")
+        ad_link_url = copy_data.get("link_url", link_url)
 
-    print(f"\n✅ Stage 8 Complete")
-    print(f"   {'Would upload' if args.dry_run else 'Uploaded'}: {total_uploaded} creatives")
-    if not args.activate:
-        print(f"   All ads created as PAUSED — review in Ads Manager before activating")
+        # Clean ad set name for Meta (e.g. "ad-set-01-tool-consolidation" → "GV/Q1/ToolStack")
+        short_names = {
+            "ad-set-01-tool-consolidation": "GV/Q1/ToolStack",
+            "ad-set-02-volume": "GV/Q1/Volume",
+            "ad-set-03-ai-creation": "GV/Q1/AICreate",
+            "ad-set-04-anti-shadowban": "GV/Q1/NoShadow",
+            "ad-set-05-social-proof": "GV/Q1/Proof",
+        }
+        meta_adset_name = short_names.get(ad_set_name, ad_set_name)
+
+        print(f"\n  📦 {meta_adset_name}")
+
+        # Create ad set (no individual budget — CBO distributes)
+        if args.dry_run:
+            print(f"    [DRY RUN] Would create ad set: {meta_adset_name}")
+            adset_id = f"DRY_RUN_{ad_set_name}"
+        else:
+            adset_id = api.create_adset(
+                name=meta_adset_name,
+                campaign_id=campaign_id,
+                optimization_goal="OFFSITE_CONVERSIONS",
+                billing_event="IMPRESSIONS",
+                bid_strategy="LOWEST_COST_WITHOUT_CAP",
+                targeting=targeting,
+                promoted_object=promoted_object,
+                status="PAUSED",
+            )
+            print(f"    ✓ Ad Set ID: {adset_id}")
+
+        # Create ads (one per image)
+        ad_ids = []
+        for i, image_path in enumerate(ad_set_data["images"]):
+            image_name = Path(image_path).stem
+            # Rotate through copy variations
+            primary_text = primary_texts[i % len(primary_texts)]
+            headline = headlines[i % len(headlines)]
+            description = descriptions[i % len(descriptions)] if descriptions else None
+
+            ad_name = f"{meta_adset_name}/{image_name}"
+            print(f"    📄 {ad_name}")
+
+            if args.dry_run:
+                print(f"       [DRY RUN] Image: {Path(image_path).name}")
+                print(f"       [DRY RUN] Headline: {headline}")
+                print(f"       [DRY RUN] Body: {primary_text[:60]}...")
+                total_ads += 1
+                continue
+
+            # Upload image
+            print(f"       Uploading image...")
+            image_hash = api.create_ad_image(image_path)
+            print(f"       ✓ Hash: {image_hash[:16]}...")
+
+            # Create creative
+            print(f"       Creating creative...")
+            creative_id = api.create_ad_creative(
+                name=ad_name,
+                page_id=page_id,
+                image_hash=image_hash,
+                headline=headline,
+                body=primary_text,
+                link_url=ad_link_url,
+                cta_type=cta_type,
+                description=description,
+            )
+            print(f"       ✓ Creative: {creative_id}")
+
+            # Create ad
+            print(f"       Creating ad...")
+            ad_id = api.create_ad(
+                name=ad_name,
+                adset_id=adset_id,
+                creative_id=creative_id,
+                status="PAUSED",
+            )
+            print(f"       ✓ Ad: {ad_id}")
+            ad_ids.append(ad_id)
+            total_ads += 1
+
+        results[ad_set_name] = {
+            "adset_id": adset_id,
+            "ad_ids": ad_ids,
+        }
+
+    # ── Summary ──
+    print(f"\n{'=' * 50}")
+    print(f"✅ Stage 8 Complete")
+    print(f"   Campaign: {campaign_id}")
+    print(f"   Ad Sets: {len(results)}")
+    print(f"   Total Ads: {total_ads}")
+    print(f"   Status: ALL PAUSED")
+    print(f"\n   Review in Meta Ads Manager, then activate.")
+
+    # Save result manifest
+    manifest = {
+        "campaign_id": campaign_id,
+        "product": args.product,
+        "ad_sets": results,
+        "total_ads": total_ads,
+    }
+    manifest_path = Path(args.rundir) / "upload-manifest.json"
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+    print(f"   Manifest: {manifest_path}")
 
 
 if __name__ == "__main__":

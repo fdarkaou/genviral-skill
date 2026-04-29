@@ -128,7 +128,7 @@ python3 campaign/scripts/upload_to_meta.py \
 
 ```
 meta-ads-skill/
-  INSTRUCTIONS.md               ← Bundled companion guide inside `genviral-skill`
+  SKILL.md                      ← OpenClaw skill descriptor
   README.md                     ← This file
   config.example.yaml           ← Template — copy to config.yaml
   config.yaml                   ← Your config (gitignored — never commit)
