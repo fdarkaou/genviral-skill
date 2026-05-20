@@ -20,10 +20,10 @@ All commands are key-scoped and use the standard Partner API response envelope.
 List available Studio models with capabilities, credit costs, and supported params.
 
 ```bash
-genviral.sh studio-models                  # all models
-genviral.sh studio-models --mode image     # image models only
-genviral.sh studio-models --mode video     # video models only
-genviral.sh studio-models --json           # raw JSON output
+genviral studio-models                  # all models
+genviral studio-models --mode image     # image models only
+genviral studio-models --mode video     # video models only
+genviral studio-models --json           # raw JSON output
 ```
 
 ### Options
@@ -61,32 +61,32 @@ Generate one AI image synchronously. Returns hosted output URL immediately.
 
 ```bash
 # Basic image generation
-genviral.sh studio-generate-image \
+genviral studio-generate-image \
   --model-id "google/nano-banana-2" \
   --prompt "A cinematic beach sunset with palm trees" \
   --aspect-ratio "16:9"
 
 # With output format
-genviral.sh studio-generate-image \
+genviral studio-generate-image \
   --model-id "google/nano-banana-2" \
   --prompt "Minimalist product photo, white background" \
   --output-format jpeg \
   --aspect-ratio "1:1"
 
 # With reference images
-genviral.sh studio-generate-image \
+genviral studio-generate-image \
   --model-id "some/model" \
   --prompt "Transform this photo into anime style" \
   --image-urls "https://example.com/photo.jpg"
 
 # With model-specific raw params
-genviral.sh studio-generate-image \
+genviral studio-generate-image \
   --model-id "google/nano-banana-2" \
   --prompt "Abstract art" \
   --raw-params '{"seed": 42}'
 
 # TikTok copy remix with product context
-genviral.sh studio-generate-image \
+genviral studio-generate-image \
   --model-id "google/nano-banana-2" \
   --image-urls "https://source-slide-1.jpg" \
   --prompt "Create a visually similar but original ad image for PRODUCT_NAME. Keep the same pacing and focal structure, but use new elements that fit PRODUCT_CONTEXT."
@@ -124,28 +124,28 @@ Start async video generation. Returns a `video_id` for polling.
 
 ```bash
 # Text-to-video
-genviral.sh studio-generate-video \
+genviral studio-generate-video \
   --model-id "openai/sora-2" \
   --prompt "A drone shot over neon city streets at night" \
   --duration-seconds 8 \
   --aspect-ratio "16:9"
 
 # Image-to-video
-genviral.sh studio-generate-video \
+genviral studio-generate-video \
   --model-id "some/img2vid-model" \
   --prompt "Slowly zoom in with cinematic motion" \
   --image-url "https://cdn.example.com/photo.jpg" \
   --duration-seconds 5
 
 # With speech/lipsync
-genviral.sh studio-generate-video \
+genviral studio-generate-video \
   --model-id "veed/fabric-1.0" \
   --speech-text "Welcome to our channel" \
   --voice-id "george" \
   --image-url "https://cdn.example.com/avatar.jpg"
 
 # Video-to-video
-genviral.sh studio-generate-video \
+genviral studio-generate-video \
   --model-id "some/vid2vid-model" \
   --prompt "Apply cinematic color grading" \
   --video-url "https://cdn.example.com/input.mp4"
@@ -197,13 +197,13 @@ Poll video generation status. Supports both one-shot checks and auto-polling.
 
 ```bash
 # One-shot status check
-genviral.sh studio-video-status --video-id "22222222-2222-2222-2222-222222222222"
+genviral studio-video-status --video-id "22222222-2222-2222-2222-222222222222"
 
 # Auto-poll until done (default: every 5s, max 120s)
-genviral.sh studio-video-status --video-id VIDEO_UUID --poll
+genviral studio-video-status --video-id VIDEO_UUID --poll
 
 # Custom poll intervals
-genviral.sh studio-video-status --video-id VIDEO_UUID --poll --poll-interval 10 --poll-max 300
+genviral studio-video-status --video-id VIDEO_UUID --poll --poll-interval 10 --poll-max 300
 ```
 
 ### Options
@@ -229,17 +229,17 @@ genviral.sh studio-video-status --video-id VIDEO_UUID --poll --poll-interval 10 
 ### Image Generation
 ```bash
 # 1. Check available models
-genviral.sh studio-models --mode image
+genviral studio-models --mode image
 
 # 2. Generate image
-genviral.sh studio-generate-image \
+genviral studio-generate-image \
   --model-id "google/nano-banana-2" \
   --prompt "Your prompt" \
   --aspect-ratio "9:16"
 # → instant output_url
 
 # 3. Use in a slideshow or post
-genviral.sh create-post \
+genviral create-post \
   --caption "Check this out" \
   --media-type slideshow \
   --media-urls "OUTPUT_URL_HERE" \
@@ -249,21 +249,21 @@ genviral.sh create-post \
 ### Video Generation
 ```bash
 # 1. Check available models
-genviral.sh studio-models --mode video
+genviral studio-models --mode video
 
 # 2. Start generation
-genviral.sh studio-generate-video \
+genviral studio-generate-video \
   --model-id "openai/sora-2" \
   --prompt "Your prompt" \
   --duration-seconds 8
 # → video_id
 
 # 3. Poll until ready
-genviral.sh studio-video-status --video-id VIDEO_ID --poll
+genviral studio-video-status --video-id VIDEO_ID --poll
 # → output_url when succeeded
 
 # 4. Post the video
-genviral.sh create-post \
+genviral create-post \
   --caption "New video drop" \
   --media-type video \
   --media-url "OUTPUT_URL_HERE" \

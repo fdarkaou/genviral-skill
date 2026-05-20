@@ -6,7 +6,7 @@ Create a post (video OR slideshow) targeting one or more accounts. This is the c
 **Video post:**
 
 ```bash
-genviral.sh create-post \
+genviral create-post \
   --caption "Your caption with #hashtags" \
   --media-type video \
   --media-url "https://cdn.genviral.com/your-video.mp4" \
@@ -17,7 +17,7 @@ genviral.sh create-post \
 **Slideshow post:**
 
 ```bash
-genviral.sh create-post \
+genviral create-post \
   --caption "Your caption" \
   --media-type slideshow \
   --media-urls "url1,url2,url3,url4,url5,url6" \
@@ -28,7 +28,7 @@ genviral.sh create-post \
 **TikTok-specific settings** (only when ALL accounts are TikTok BYO):
 
 ```bash
-genviral.sh create-post \
+genviral create-post \
   --caption "Caption" \
   --media-type slideshow \
   --media-urls "url1,url2,url3,url4,url5,url6" \
@@ -66,7 +66,7 @@ TikTok `privacy_level` options:
 **Pinterest-specific settings** (when at least one account is Pinterest):
 
 ```bash
-genviral.sh create-post \
+genviral create-post \
   --caption "10 minimalist desk setups" \
   --media-type slideshow \
   --media-urls "url1,url2,url3" \
@@ -112,7 +112,7 @@ You can target up to 10 accounts per post. Mix TikTok, Instagram, etc. Music is 
 Update an existing post (only editable if status is draft, pending, scheduled, retry, or failed).
 
 ```bash
-genviral.sh update-post \
+genviral update-post \
   --id POST_ID \
   --caption "Updated caption" \
   --media-type video \
@@ -129,7 +129,7 @@ Clear operations:
 
 Pinterest update example:
 ```bash
-genviral.sh update-post \
+genviral update-post \
   --id POST_ID \
   --pinterest-board-id "NEW_BOARD_ID" \
   --pinterest-title "Updated pin title" \
@@ -149,8 +149,8 @@ Validation notes:
 Retry failed or partial posts.
 
 ```bash
-genviral.sh retry-posts --post-ids "post_id_1,post_id_2"
-genviral.sh retry-posts --post-ids "post_id_1" --account-ids "account_id_1"
+genviral retry-posts --post-ids "post_id_1,post_id_2"
+genviral retry-posts --post-ids "post_id_1" --account-ids "account_id_1"
 ```
 
 Limits:
@@ -163,10 +163,10 @@ Limits:
 List posts with optional filters.
 
 ```bash
-genviral.sh list-posts
-genviral.sh list-posts --status scheduled --limit 20
-genviral.sh list-posts --since "2025-02-01T00:00:00Z" --until "2025-02-28T23:59:59Z"
-genviral.sh list-posts --json
+genviral list-posts
+genviral list-posts --status scheduled --limit 20
+genviral list-posts --since "2025-02-01T00:00:00Z" --until "2025-02-28T23:59:59Z"
+genviral list-posts --json
 ```
 
 `--since` and `--until` must be ISO 8601 datetimes with timezone offset.
@@ -179,7 +179,7 @@ Status filters: `draft`, `pending`, `scheduled`, `posted`, `failed`, `partial`, 
 Get details for a specific post.
 
 ```bash
-genviral.sh get-post --id POST_ID
+genviral get-post --id POST_ID
 ```
 
 ---
@@ -188,9 +188,9 @@ genviral.sh get-post --id POST_ID
 Bulk delete posts by IDs.
 
 ```bash
-genviral.sh delete-posts --ids "post_id_1,post_id_2,post_id_3"
-genviral.sh delete-posts --post-ids "post_id_1,post_id_2,post_id_3"
-genviral.sh delete-post --ids "post_id_1,post_id_2"
+genviral delete-posts --ids "post_id_1,post_id_2,post_id_3"
+genviral delete-posts --post-ids "post_id_1,post_id_2,post_id_3"
+genviral delete-post --ids "post_id_1,post_id_2"
 ```
 
 Limit: up to 50 IDs per request.

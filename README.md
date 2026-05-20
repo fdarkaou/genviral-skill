@@ -31,48 +31,51 @@ The skill runs a closed loop:
 ## Quick Start
 
 ```bash
+# Install the CLI (once)
+npm install -g @genviral/cli
+
 # Set your API key
 export GENVIRAL_API_KEY="your_public_id.your_secret"
 
 # See what accounts you have
-./scripts/genviral.sh accounts
+genviral accounts
 
 # Pull niche intelligence in one call
-./scripts/genviral.sh trend-brief --keyword "indie hacker" --range 7d --limit 10
+genviral trend-brief --keyword "indie hacker" --range 7d --limit 10
 
 # List image packs
-./scripts/genviral.sh list-packs
+genviral list-packs
 
 # Generate a slideshow (always pin images — see docs/api/packs.md)
-./scripts/genviral.sh generate \
+genviral generate \
   --prompt "5 morning habits that changed my life" \
   --pack-id PACK_ID \
   --slides 5 \
   --slide-config-json '{"total_slides":5,"slide_types":["image_pack","image_pack","image_pack","image_pack","image_pack"],"pinned_images":{"0":"URL_0","1":"URL_1","2":"URL_2","3":"URL_3","4":"URL_4"}}'
 
 # Render and post
-./scripts/genviral.sh render --id SLIDESHOW_ID
-./scripts/genviral.sh create-post \
+genviral render --id SLIDESHOW_ID
+genviral create-post \
   --caption "Caption with #hashtags" \
   --media-type slideshow \
   --media-urls "url1,url2,url3,url4,url5" \
   --accounts ACCOUNT_ID
 
 # Copy an existing TikTok slideshow into an editable draft
-./scripts/genviral.sh copy-tiktok-preview --url "https://www.tiktok.com/@creator/photo/7499123456789012345"
-./scripts/genviral.sh copy-tiktok-import \
+genviral copy-tiktok-preview --url "https://www.tiktok.com/@creator/photo/7499123456789012345"
+genviral copy-tiktok-import \
   --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
   --preview-id PREVIEW_UUID \
   --pack-id PACK_UUID
 
 # Generate a "similar but new" variation using Studio + NanoBanana
-./scripts/genviral.sh studio-generate-image \
+genviral studio-generate-image \
   --model-id "google/nano-banana-2" \
   --image-urls "https://source-slide-url.jpg" \
   --prompt "Create a new original ad image inspired by this slide, aligned with PRODUCT_CONTEXT."
 
 # Check performance
-./scripts/genviral.sh analytics-summary --range 30d
+genviral analytics-summary --range 30d
 ```
 
 Analytics identity rule:
@@ -83,7 +86,7 @@ Analytics identity rule:
 
 For BYO TikTok drafts (`post_mode=MEDIA_UPLOAD`), the initial TikTok draft/inbox `publish_id` is not the final public TikTok video ID. Use `genviralPostId` or `externalId` to correlate analytics back to created posts.
 
-For Studio video generation, call `./scripts/genviral.sh studio-models --mode video`
+For Studio video generation, call `genviral studio-models --mode video`
 before relying on speech-specific flags. Today `--speech-text`, `--voice-id`,
 and `--audio-url` are only exposed for explicit talking/lipsync models;
 prompt-driven models like Sora/Veo are prompt-only, so put any desired dialogue
@@ -143,7 +146,7 @@ genviral/
     competitor-research.md  # How to research competitors
 
   scripts/
-    genviral.sh             # 44+ commands wrapping every Partner API endpoint
+    genviral             # 44+ commands wrapping every Partner API endpoint
     update-skill.sh         # Self-updater (keeps skill files current, never touches workspace/)
 
   prompts/
@@ -163,7 +166,7 @@ genviral/
 | **Analytics & Trends** | `analytics-summary`, `analytics-posts`, `analytics-targets`, `analytics-target-create`, `analytics-target-refresh`, `analytics-refresh`, `analytics-workspace-suggestions`, `trend-brief` |
 
 ```bash
-./scripts/genviral.sh help  # full command list
+genviral help  # full command list
 ```
 
 ## Auto-Updates

@@ -11,8 +11,8 @@ Read `workspace/hooks/library.json` and pick a hook. Rotate through categories.
 
 ### 2. Pack Discovery
 ```bash
-genviral.sh list-packs
-genviral.sh get-pack --id PACK_ID  # get full image list with metadata
+genviral list-packs
+genviral get-pack --id PACK_ID  # get full image list with metadata
 ```
 
 ### 3. Analyze Pack Images (MANDATORY — DO NOT SKIP)
@@ -32,7 +32,7 @@ Use the selected hook and visual direction to build a slideshow prompt. Referenc
 
 ### 6. Generate WITH Pinned Images
 ```bash
-genviral.sh generate \
+genviral generate \
   --prompt "Your prompt" \
   --pack-id PACK_ID \
   --slides 5 \
@@ -45,7 +45,7 @@ Check each slide for clarity, readability, and flow. Update or regenerate weak s
 
 ### 8. Render
 ```bash
-genviral.sh render --id SLIDESHOW_ID
+genviral render --id SLIDESHOW_ID
 ```
 
 ### 9. Visual Review + Fix Loop (MANDATORY — HARD GATE)
@@ -56,15 +56,15 @@ Visually inspect EVERY rendered slide. For each slide check:
 
 **If ANY slide fails readability: fix it before moving on.** Do not just report "needs fixing."
 ```bash
-genviral.sh update --id SLIDESHOW_ID --slides '[...slides with adjusted style_preset, filters, etc...]'
-genviral.sh render --id SLIDESHOW_ID
+genviral update --id SLIDESHOW_ID --slides '[...slides with adjusted style_preset, filters, etc...]'
+genviral render --id SLIDESHOW_ID
 ```
 Fix options: change `style_preset`, add `background_filters` (darken/blur), swap image, adjust text position.
 Re-review after each fix. **You cannot proceed to step 10 until all slides pass.**
 
 ### 10. Post
 ```bash
-genviral.sh create-post \
+genviral create-post \
   --caption "Caption with #hashtags" \
   --media-type slideshow \
   --media-urls "url1,url2,url3,url4,url5" \
@@ -73,7 +73,7 @@ genviral.sh create-post \
 
 Or for TikTok drafts (add music before publishing):
 ```bash
-genviral.sh post-draft --id SLIDESHOW_ID --caption "Caption" --account-ids "account_id"
+genviral post-draft --id SLIDESHOW_ID --caption "Caption" --account-ids "account_id"
 ```
 
 ### 11. Log the Post (MANDATORY)
@@ -120,7 +120,7 @@ Add an entry to `workspace/performance/hook-tracker.json`:
 
 ### 13. Performance Check (48h and 7d after posting)
 ```bash
-genviral.sh analytics-posts --range 7d --sort-by views --sort-order desc --json
+genviral analytics-posts --range 7d --sort-by views --sort-order desc --json
 ```
 Match posts to hook-tracker entries by `genviralPostId` first, then `externalId` if your workflow stores it. Do not use analytics `id` / `analyticsId` for this join. Update metrics, set `last_checked` to now, set `status` to `tracking`.
 
@@ -247,7 +247,7 @@ Identify the CTA type that converts best for each hook category. This maximizes 
 Post a rendered slideshow as a TikTok draft (forces `privacy_level=SELF_ONLY`, `post_mode=MEDIA_UPLOAD`).
 
 ```bash
-genviral.sh post-draft \
+genviral post-draft \
   --id SLIDESHOW_ID \
   --caption "Caption with #hashtags" \
   --account-ids "account_id"
@@ -259,7 +259,7 @@ Guardrail: the CLI warns near TikTok's pending-share cap and blocks at 5+ MEDIA_
 End-to-end: generate -> render -> review -> post draft.
 
 ```bash
-genviral.sh full-pipeline \
+genviral full-pipeline \
   --prompt "Your hook and content prompt" \
   --caption "Caption with #hashtags" \
   --pack-id PACK_ID \

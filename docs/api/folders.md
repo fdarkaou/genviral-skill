@@ -5,8 +5,8 @@ Folders organize partner-scoped files and slideshows into nested hierarchies.
 **Media types supported:**
 - `ai_image` — images generated via Studio AI
 - `ai_video` — videos generated via Studio AI
-- `upload` — files uploaded via `genviral.sh upload`
-- `slideshow` — slideshows created via `genviral.sh generate`
+- `upload` — files uploaded via `genviral upload`
+- `slideshow` — slideshows created via `genviral generate`
 
 > **Scope rule:** folder visibility always matches the key scope.
 > Workspace keys only see workspace folders; personal keys only see personal folders.
@@ -17,10 +17,10 @@ Folders organize partner-scoped files and slideshows into nested hierarchies.
 List folders at a given hierarchy level.
 
 ```bash
-genviral.sh list-folders --media-type upload
-genviral.sh list-folders --media-type slideshow --parent-folder-id FOLDER_UUID
-genviral.sh list-folders --media-type ai_image --limit 20 --offset 0
-genviral.sh list-folders --media-type upload --json
+genviral list-folders --media-type upload
+genviral list-folders --media-type slideshow --parent-folder-id FOLDER_UUID
+genviral list-folders --media-type ai_image --limit 20 --offset 0
+genviral list-folders --media-type upload --json
 ```
 
 Options:
@@ -38,8 +38,8 @@ Returns: folder summaries with `file_count`, `subfolder_count`, `preview_files`.
 Create a folder (optionally nested under a parent).
 
 ```bash
-genviral.sh create-folder --name "March Campaign" --media-type upload
-genviral.sh create-folder --name "Q1 Slideshows" --media-type slideshow --parent-folder-id FOLDER_UUID
+genviral create-folder --name "March Campaign" --media-type upload
+genviral create-folder --name "Q1 Slideshows" --media-type slideshow --parent-folder-id FOLDER_UUID
 ```
 
 Options:
@@ -56,8 +56,8 @@ Errors:
 Fetch metadata for a single folder.
 
 ```bash
-genviral.sh get-folder --id FOLDER_UUID
-genviral.sh get-folder --id FOLDER_UUID --json
+genviral get-folder --id FOLDER_UUID
+genviral get-folder --id FOLDER_UUID --json
 ```
 
 ---
@@ -66,8 +66,8 @@ genviral.sh get-folder --id FOLDER_UUID --json
 Move a folder to a new parent (or promote to root).
 
 ```bash
-genviral.sh move-folder --id FOLDER_UUID --parent-folder-id NEW_PARENT_UUID
-genviral.sh move-folder --id FOLDER_UUID --to-root   # moves to root level
+genviral move-folder --id FOLDER_UUID --parent-folder-id NEW_PARENT_UUID
+genviral move-folder --id FOLDER_UUID --to-root   # moves to root level
 ```
 
 Options:
@@ -84,7 +84,7 @@ Errors:
 Delete a folder and all its nested contents (cascades to subfolders and items).
 
 ```bash
-genviral.sh delete-folder --id FOLDER_UUID
+genviral delete-folder --id FOLDER_UUID
 ```
 
 > **Warning:** cascade delete removes all subfolders and their items. Items (files/slideshows) themselves are NOT deleted from the platform — only removed from the folder.
@@ -95,8 +95,8 @@ genviral.sh delete-folder --id FOLDER_UUID
 Get the breadcrumb trail from root to a folder's immediate parent.
 
 ```bash
-genviral.sh folder-ancestors --id FOLDER_UUID
-genviral.sh folder-ancestors --id FOLDER_UUID --json
+genviral folder-ancestors --id FOLDER_UUID
+genviral folder-ancestors --id FOLDER_UUID --json
 ```
 
 Returns: ordered list of ancestor folders with `id`, `name`, `parent_folder_id`, `depth`.
@@ -107,9 +107,9 @@ Returns: ordered list of ancestor folders with `id`, `name`, `parent_folder_id`,
 List items inside a folder.
 
 ```bash
-genviral.sh folder-items --id FOLDER_UUID
-genviral.sh folder-items --id FOLDER_UUID --limit 20 --offset 0
-genviral.sh folder-items --id FOLDER_UUID --json
+genviral folder-items --id FOLDER_UUID
+genviral folder-items --id FOLDER_UUID --limit 20 --offset 0
+genviral folder-items --id FOLDER_UUID --json
 ```
 
 For `upload`/`ai_image`/`ai_video` folders: returns file objects with URL, content_type, size.
@@ -121,7 +121,7 @@ For `slideshow` folders: returns slideshow objects.
 Add files or slideshows to a folder.
 
 ```bash
-genviral.sh folder-items-add --id FOLDER_UUID --item-ids "UUID1,UUID2,UUID3"
+genviral folder-items-add --id FOLDER_UUID --item-ids "UUID1,UUID2,UUID3"
 ```
 
 Item type must match folder `media_type`:
@@ -137,7 +137,7 @@ Errors:
 Remove items from a folder (does not delete the underlying files/slideshows).
 
 ```bash
-genviral.sh folder-items-remove --id FOLDER_UUID --item-ids "UUID1,UUID2"
+genviral folder-items-remove --id FOLDER_UUID --item-ids "UUID1,UUID2"
 ```
 
 ---
@@ -146,22 +146,22 @@ genviral.sh folder-items-remove --id FOLDER_UUID --item-ids "UUID1,UUID2"
 
 ```bash
 # 1. Create a folder hierarchy
-genviral.sh create-folder --name "Buildfound Ads" --media-type upload
+genviral create-folder --name "Buildfound Ads" --media-type upload
 # → returns folder ID, e.g. "abc-123"
 
-genviral.sh create-folder --name "March 2026" --media-type upload --parent-folder-id abc-123
+genviral create-folder --name "March 2026" --media-type upload --parent-folder-id abc-123
 # → returns subfolder ID, e.g. "def-456"
 
 # 2. Upload files and add them to the folder
-genviral.sh upload --file ad-slide-1.jpg --content-type image/jpeg
+genviral upload --file ad-slide-1.jpg --content-type image/jpeg
 # → returns file ID, e.g. "file-789"
 
-genviral.sh folder-items-add --id def-456 --item-ids "file-789"
+genviral folder-items-add --id def-456 --item-ids "file-789"
 
 # 3. Browse the structure
-genviral.sh list-folders --media-type upload
-genviral.sh folder-items --id def-456
+genviral list-folders --media-type upload
+genviral folder-items --id def-456
 
 # 4. Check breadcrumbs
-genviral.sh folder-ancestors --id def-456
+genviral folder-ancestors --id def-456
 ```

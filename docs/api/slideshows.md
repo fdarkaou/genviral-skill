@@ -5,7 +5,7 @@ Generate a slideshow from a prompt (AI mode), or build it manually with explicit
 
 ```bash
 # AI mode (default)
-genviral.sh generate \
+genviral generate \
   --prompt "Your hook and content prompt" \
   --pack-id PACK_ID \
   --slides 5 \
@@ -18,12 +18,12 @@ genviral.sh generate \
   --product-id PRODUCT_ID
 
 # Manual/mixed mode with slide_config
-genviral.sh generate \
+genviral generate \
   --skip-ai \
   --slide-config-file slide-config.json
 
 # Pass slide_config inline
-genviral.sh generate \
+genviral generate \
   --skip-ai \
   --slide-config-json '{"total_slides":2,"slide_types":["image_pack","custom_image"],...}'
 ```
@@ -64,7 +64,7 @@ Validation rules:
 Render a slideshow to images via Remotion.
 
 ```bash
-genviral.sh render --id SLIDESHOW_ID
+genviral render --id SLIDESHOW_ID
 ```
 
 Returns:
@@ -77,9 +77,9 @@ Returns:
 Get full slideshow details for review. Shows slide text, status, rendered URLs.
 
 ```bash
-genviral.sh review --id SLIDESHOW_ID
-genviral.sh review --id SLIDESHOW_ID --json
-genviral.sh get-slideshow --id SLIDESHOW_ID  # alias
+genviral review --id SLIDESHOW_ID
+genviral review --id SLIDESHOW_ID --json
+genviral get-slideshow --id SLIDESHOW_ID  # alias
 ```
 
 ---
@@ -89,23 +89,23 @@ Update slideshow fields, settings, or slides. Re-render after updating slides.
 
 ```bash
 # Update title
-genviral.sh update --id SLIDESHOW_ID --title "New Title"
+genviral update --id SLIDESHOW_ID --title "New Title"
 
 # Update status
-genviral.sh update --id SLIDESHOW_ID --status draft
+genviral update --id SLIDESHOW_ID --status draft
 
 # Update settings
-genviral.sh update --id SLIDESHOW_ID --settings-json '{"aspect_ratio":"9:16","advanced_settings":{"text_width":"narrow"}}'
+genviral update --id SLIDESHOW_ID --settings-json '{"aspect_ratio":"9:16","advanced_settings":{"text_width":"narrow"}}'
 
 # Update slides (full replacement)
-genviral.sh update --id SLIDESHOW_ID --slides '[{"image_url":"...","text_elements":[{"content":"..."}]}]'
+genviral update --id SLIDESHOW_ID --slides '[{"image_url":"...","text_elements":[{"content":"..."}]}]'
 
 # Load slides from file
-genviral.sh update --id SLIDESHOW_ID --slides-file slides.json
+genviral update --id SLIDESHOW_ID --slides-file slides.json
 
 # Update product_id or clear it
-genviral.sh update --id SLIDESHOW_ID --product-id NEW_PRODUCT_ID
-genviral.sh update --id SLIDESHOW_ID --clear-product-id
+genviral update --id SLIDESHOW_ID --product-id NEW_PRODUCT_ID
+genviral update --id SLIDESHOW_ID --clear-product-id
 ```
 
 Options:
@@ -189,8 +189,8 @@ Apply font per text element using `slides[].text_elements[].font_family`.
 Regenerate AI text for a single slide (0-indexed).
 
 ```bash
-genviral.sh regenerate-slide --id SLIDESHOW_ID --index 2
-genviral.sh regenerate-slide --id SLIDESHOW_ID --index 2 --instruction "Make this shorter and more punchy"
+genviral regenerate-slide --id SLIDESHOW_ID --index 2
+genviral regenerate-slide --id SLIDESHOW_ID --index 2 --instruction "Make this shorter and more punchy"
 ```
 
 Constraints:
@@ -203,7 +203,7 @@ Constraints:
 Clone an existing slideshow as a new draft.
 
 ```bash
-genviral.sh duplicate --id SLIDESHOW_ID
+genviral duplicate --id SLIDESHOW_ID
 ```
 
 ---
@@ -212,7 +212,7 @@ genviral.sh duplicate --id SLIDESHOW_ID
 Delete a slideshow.
 
 ```bash
-genviral.sh delete --id SLIDESHOW_ID
+genviral delete --id SLIDESHOW_ID
 ```
 
 ---
@@ -221,9 +221,9 @@ genviral.sh delete --id SLIDESHOW_ID
 List slideshows with filtering and pagination.
 
 ```bash
-genviral.sh list-slideshows
-genviral.sh list-slideshows --status rendered --search "hook" --limit 20 --offset 0
-genviral.sh list-slideshows --json
+genviral list-slideshows
+genviral list-slideshows --status rendered --search "hook" --limit 20 --offset 0
+genviral list-slideshows --json
 ```
 
 ---
@@ -232,8 +232,8 @@ genviral.sh list-slideshows --json
 Validate a TikTok slideshow/photo URL before import and get a short-lived preview token.
 
 ```bash
-genviral.sh copy-tiktok-preview --url "https://www.tiktok.com/@creator/photo/7499123456789012345"
-genviral.sh copy-tiktok-preview --url "https://www.tiktok.com/@creator/photo/7499123456789012345" --json
+genviral copy-tiktok-preview --url "https://www.tiktok.com/@creator/photo/7499123456789012345"
+genviral copy-tiktok-preview --url "https://www.tiktok.com/@creator/photo/7499123456789012345" --json
 ```
 
 Returns:
@@ -250,19 +250,19 @@ Import a TikTok slideshow into an editable Genviral draft with OCR-mapped text o
 
 ```bash
 # Import using a pack ID
-genviral.sh copy-tiktok-import \
+genviral copy-tiktok-import \
   --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
   --preview-id PREVIEW_UUID \
   --pack-id PACK_UUID \
   --title "Copied Hook Variant"
 
 # Import using direct pack image URLs (comma-separated)
-genviral.sh copy-tiktok-import \
+genviral copy-tiktok-import \
   --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
   --pack-images "https://cdn.example.com/pack-1.jpg,https://cdn.example.com/pack-2.jpg"
 
 # Import using JSON file of image URLs
-genviral.sh copy-tiktok-import \
+genviral copy-tiktok-import \
   --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
   --pack-images-file ./pack-images.json \
   --product-id PRODUCT_UUID
@@ -290,18 +290,18 @@ Use this when you want "same concept, new visuals" instead of a direct copy.
 
 ```bash
 # 1) Preview source slideshow
-genviral.sh copy-tiktok-preview \
+genviral copy-tiktok-preview \
   --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
   --json > /tmp/tiktok-preview.json
 
 # 2) Import (text OCR + editable slide draft)
-genviral.sh copy-tiktok-import \
+genviral copy-tiktok-import \
   --url "https://www.tiktok.com/@creator/photo/7499123456789012345" \
   --preview-id PREVIEW_UUID \
   --pack-id PACK_UUID
 
 # 3) Create image variations with NanoBanana using each source slide image
-genviral.sh studio-generate-image \
+genviral studio-generate-image \
   --model-id "google/nano-banana-2" \
   --image-urls "https://source-slide-url.jpg" \
   --prompt "Keep composition rhythm, but create a new scene aligned with PRODUCT_CONTEXT. Preserve clarity for overlaid text."

@@ -14,9 +14,9 @@ The job is to close the loop. Post content, track what happens, adjust based on 
 
 ### KPI Summary
 ```bash
-genviral.sh analytics-summary --range 30d
-genviral.sh analytics-summary --range 7d --platforms tiktok
-genviral.sh analytics-summary --start 2026-01-01 --end 2026-01-31 --json
+genviral analytics-summary --range 30d
+genviral analytics-summary --range 7d --platforms tiktok
+genviral analytics-summary --start 2026-01-01 --end 2026-01-31 --json
 ```
 
 Use this for high-level trends:
@@ -27,8 +27,8 @@ Use this for high-level trends:
 
 ### Per-Post Metrics
 ```bash
-genviral.sh analytics-posts --range 30d --sort-by views --sort-order desc --limit 50
-genviral.sh analytics-posts --range 7d --platforms tiktok --json
+genviral analytics-posts --range 30d --sort-by views --sort-order desc --limit 50
+genviral analytics-posts --range 7d --platforms tiktok --json
 ```
 
 Use this to see individual post performance. Sort by views descending to immediately surface winners.
@@ -47,7 +47,7 @@ Cross-reference using `genviralPostId` first, then `externalId` if needed, to co
 
 **Step 1: Pull post-level analytics**
 ```bash
-genviral.sh analytics-posts --range 30d --sort-by views --sort-order desc --json
+genviral analytics-posts --range 30d --sort-by views --sort-order desc --json
 ```
 
 Save or parse the output. For each post, note:
@@ -153,8 +153,8 @@ Run this every Monday (or the first day of your content week).
 
 **1. Pull the last 7 days of analytics**
 ```bash
-genviral.sh analytics-summary --range 7d
-genviral.sh analytics-posts --range 7d --sort-by views --sort-order desc --json
+genviral analytics-summary --range 7d
+genviral analytics-posts --range 7d --sort-by views --sort-order desc --json
 ```
 
 **2. Update hook-tracker with fresh metrics**

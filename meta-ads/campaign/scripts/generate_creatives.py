@@ -24,7 +24,7 @@ from pathlib import Path
 
 # Path to genviral CLI script — resolves to sibling skill
 SKILL_ROOT = Path(__file__).parent.parent.parent.parent  # agent/skills/
-GENVIRAL_SCRIPT = SKILL_ROOT / "genviral" / "scripts" / "genviral.sh"
+GENVIRAL_SCRIPT = SKILL_ROOT / "genviral" / "scripts" / "genviral"
 
 DEFAULT_MODEL = "google/nano-banana-2"   # default: equal quality to pro, faster + cheaper
 PRO_MODEL = "google/nano-banana-pro"     # higher quality option (2 credits)
@@ -124,9 +124,9 @@ IMAGE_FORMATS = {
 
 
 def run_genviral_cmd(args_list: list, timeout: int = 120) -> dict:
-    """Run a genviral.sh command and return parsed result."""
+    """Run a genviral command and return parsed result."""
     if not GENVIRAL_SCRIPT.exists():
-        return {"ok": False, "error": f"genviral.sh not found at {GENVIRAL_SCRIPT}"}
+        return {"ok": False, "error": f"genviral not found at {GENVIRAL_SCRIPT}"}
 
     env = os.environ.copy()  # inherits GENVIRAL_API_KEY
     cmd = ["bash", str(GENVIRAL_SCRIPT)] + args_list
@@ -135,7 +135,7 @@ def run_genviral_cmd(args_list: list, timeout: int = 120) -> dict:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
         output = result.stdout + result.stderr
 
-        # genviral.sh outputs "OK: ..." on success
+        # genviral outputs "OK: ..." on success
         if result.returncode == 0 or "OK:" in output:
             # Extract output URL if present
             url_match = re.search(r'https?://\S+\.(?:png|jpg|jpeg|webp)', output)
