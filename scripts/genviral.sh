@@ -4050,6 +4050,11 @@ cmd_full_pipeline() {
 # ===========================================================================
 
 check_deps
+
+if command -v genviral >/dev/null 2>&1 && [[ "${GENVIRAL_USE_LEGACY_SHELL:-}" != "1" ]]; then
+    exec genviral "$@"
+fi
+
 load_defaults
 
 COMMAND="${1:-help}"
