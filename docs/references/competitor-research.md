@@ -20,8 +20,8 @@ This is not optional busywork. If you skip it, you are guessing. Niche context t
 Before manual competitor browsing, run trend brief for the niche keyword:
 
 ```bash
-genviral.sh trend-brief --keyword "YOUR NICHE" --range 7d --limit 10
-genviral.sh trend-brief --keyword "YOUR NICHE" --range 24h --limit 10
+genviral trend-brief --keyword "YOUR NICHE" --range 7d --limit 10
+genviral trend-brief --keyword "YOUR NICHE" --range 24h --limit 10
 ```
 
 Capture these signals as your starting baseline:

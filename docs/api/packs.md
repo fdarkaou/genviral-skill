@@ -6,9 +6,9 @@ Packs are collections of background images used in slideshows.
 List available image packs.
 
 ```bash
-genviral.sh list-packs
-genviral.sh list-packs --search motivation --include-public false
-genviral.sh list-packs --limit 20 --offset 0 --json
+genviral list-packs
+genviral list-packs --search motivation --include-public false
+genviral list-packs --limit 20 --offset 0 --json
 ```
 
 **`--search` is metadata-aware:** Matches across pack names AND AI image metadata (descriptions + keywords).
@@ -21,7 +21,7 @@ Returns pack summaries: `id`, `name`, `image_count`, `preview_image_url`, `is_pu
 Get a single pack with the full ordered image list.
 
 ```bash
-genviral.sh get-pack --id PACK_ID
+genviral get-pack --id PACK_ID
 ```
 
 Returns top-level fields: `id`, `name`, `image_count`, `is_public`, `created_at`.
@@ -60,7 +60,7 @@ Returns `images[]` ordered by creation time, each with:
 
 **1. Fetch pack images:**
 ```bash
-genviral.sh get-pack --id PACK_ID
+genviral get-pack --id PACK_ID
 ```
 
 **2. Use metadata to shortlist images:**
@@ -89,7 +89,7 @@ For each slide, pick the best-matching image. Consider topic match, text readabi
 
 **4. Build `pinned_images` and pass to generate:**
 ```bash
-genviral.sh generate \
+genviral generate \
   --prompt "Your prompt" \
   --pack-id PACK_ID \
   --slides 5 \
@@ -112,10 +112,10 @@ genviral.sh generate \
 
 ```bash
 # BAD: server picks random images, your image analysis was pointless
-genviral.sh generate --prompt "..." --pack-id PACK_ID --slides 5
+genviral generate --prompt "..." --pack-id PACK_ID --slides 5
 
 # GOOD: you control which image goes on which slide
-genviral.sh generate --prompt "..." --pack-id PACK_ID --slides 5 \
+genviral generate --prompt "..." --pack-id PACK_ID --slides 5 \
   --slide-config-json '{"total_slides":5,"slide_types":["image_pack","image_pack","image_pack","image_pack","image_pack"],"pinned_images":{"0":"URL_0","1":"URL_1","2":"URL_2","3":"URL_3","4":"URL_4"}}'
 ```
 
@@ -167,9 +167,9 @@ Different backgrounds call for different text styles. Do NOT use the same style 
 Create a new pack.
 
 ```bash
-genviral.sh create-pack --name "My Pack"
-genviral.sh create-pack --name "Public Pack" --is-public
-genviral.sh create-pack --name "Private Pack" --is-public false
+genviral create-pack --name "My Pack"
+genviral create-pack --name "Public Pack" --is-public
+genviral create-pack --name "Private Pack" --is-public false
 ```
 
 ---
@@ -178,15 +178,15 @@ genviral.sh create-pack --name "Private Pack" --is-public false
 Update pack name or visibility.
 
 ```bash
-genviral.sh update-pack --id PACK_ID --name "New Name"
-genviral.sh update-pack --id PACK_ID --is-public true
+genviral update-pack --id PACK_ID --name "New Name"
+genviral update-pack --id PACK_ID --is-public true
 ```
 
 ---
 
 ## delete-pack
 ```bash
-genviral.sh delete-pack --id PACK_ID
+genviral delete-pack --id PACK_ID
 ```
 
 ---
@@ -195,8 +195,8 @@ genviral.sh delete-pack --id PACK_ID
 Add an image to a pack. AI metadata generates asynchronously — re-fetch later to get completed metadata.
 
 ```bash
-genviral.sh add-pack-image --pack-id PACK_ID --image-url "https://cdn.example.com/image.jpg"
-genviral.sh add-pack-image --pack-id PACK_ID --image-url "https://..." --file-name "hero-1.jpg"
+genviral add-pack-image --pack-id PACK_ID --image-url "https://cdn.example.com/image.jpg"
+genviral add-pack-image --pack-id PACK_ID --image-url "https://..." --file-name "hero-1.jpg"
 ```
 
 ---
@@ -205,5 +205,5 @@ genviral.sh add-pack-image --pack-id PACK_ID --image-url "https://..." --file-na
 Remove an image from a pack.
 
 ```bash
-genviral.sh delete-pack-image --pack-id PACK_ID --image-id IMAGE_ID
+genviral delete-pack-image --pack-id PACK_ID --image-id IMAGE_ID
 ```

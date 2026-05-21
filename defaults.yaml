@@ -1,8 +1,8 @@
 # genviral Partner API Configuration
 # ==================================================
 # API key set via: GENVIRAL_API_KEY environment variable
-# Run `genviral.sh list-accounts` to find your account IDs
-# Run `genviral.sh list-packs` to find your pack IDs
+# Run `genviral list-accounts` to find your account IDs
+# Run `genviral list-packs` to find your pack IDs
 # ==================================================
 
 genviral:

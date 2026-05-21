@@ -4,12 +4,12 @@
 Get analytics summary with KPIs, trends, and content mix.
 
 ```bash
-genviral.sh analytics-summary
-genviral.sh analytics-summary --range 30d
-genviral.sh analytics-summary --start 2026-01-01 --end 2026-01-31
-genviral.sh analytics-summary --platforms tiktok,instagram
-genviral.sh analytics-summary --accounts TARGET_ID_1,TARGET_ID_2
-genviral.sh analytics-summary --json
+genviral analytics-summary
+genviral analytics-summary --range 30d
+genviral analytics-summary --start 2026-01-01 --end 2026-01-31
+genviral analytics-summary --platforms tiktok,instagram
+genviral analytics-summary --accounts TARGET_ID_1,TARGET_ID_2
+genviral analytics-summary --json
 ```
 
 Options:
@@ -32,10 +32,10 @@ Returns:
 List post-level analytics.
 
 ```bash
-genviral.sh analytics-posts
-genviral.sh analytics-posts --range 90d --sort-by views --sort-order desc --limit 25
-genviral.sh analytics-posts --start 2026-01-01 --end 2026-01-31 --platforms tiktok
-genviral.sh analytics-posts --json
+genviral analytics-posts
+genviral analytics-posts --range 90d --sort-by views --sort-order desc --limit 25
+genviral analytics-posts --start 2026-01-01 --end 2026-01-31 --platforms tiktok
+genviral analytics-posts --json
 ```
 
 Options:
@@ -68,8 +68,8 @@ BYO TikTok draft note:
 List tracked analytics accounts.
 
 ```bash
-genviral.sh analytics-targets
-genviral.sh analytics-targets --json
+genviral analytics-targets
+genviral analytics-targets --json
 ```
 
 ---
@@ -78,8 +78,8 @@ genviral.sh analytics-targets --json
 Add a new tracked account.
 
 ```bash
-genviral.sh analytics-target-create --platform tiktok --identifier @brand
-genviral.sh analytics-target-create --platform instagram --identifier @brand --alias "Brand HQ"
+genviral analytics-target-create --platform tiktok --identifier @brand
+genviral analytics-target-create --platform instagram --identifier @brand --alias "Brand HQ"
 ```
 
 Options: `--platform` (tiktok/instagram/youtube, required), `--identifier` (required), `--alias`
@@ -92,25 +92,25 @@ Options: `--platform` (tiktok/instagram/youtube, required), `--identifier` (requ
 Get details for a single analytics target.
 
 ```bash
-genviral.sh analytics-target --id TARGET_ID
+genviral analytics-target --id TARGET_ID
 ```
 
 ---
 
 ## analytics-target-update
 ```bash
-genviral.sh analytics-target-update --id TARGET_ID --display-name "New Name"
-genviral.sh analytics-target-update --id TARGET_ID --favorite true
-genviral.sh analytics-target-update --id TARGET_ID --clear-display-name
-genviral.sh analytics-target-update --id TARGET_ID --refresh-policy-json '{"freeDailyRefresh":true}'
-genviral.sh analytics-target-update --id TARGET_ID --clear-refresh-policy
+genviral analytics-target-update --id TARGET_ID --display-name "New Name"
+genviral analytics-target-update --id TARGET_ID --favorite true
+genviral analytics-target-update --id TARGET_ID --clear-display-name
+genviral analytics-target-update --id TARGET_ID --refresh-policy-json '{"freeDailyRefresh":true}'
+genviral analytics-target-update --id TARGET_ID --clear-refresh-policy
 ```
 
 ---
 
 ## analytics-target-delete
 ```bash
-genviral.sh analytics-target-delete --id TARGET_ID
+genviral analytics-target-delete --id TARGET_ID
 ```
 
 ---
@@ -119,7 +119,7 @@ genviral.sh analytics-target-delete --id TARGET_ID
 Trigger a refresh for an analytics target.
 
 ```bash
-genviral.sh analytics-target-refresh --id TARGET_ID
+genviral analytics-target-refresh --id TARGET_ID
 ```
 
 Returns: refresh ID, status, `wasFree`.
@@ -132,7 +132,7 @@ Returns: refresh ID, status, `wasFree`.
 Check refresh status.
 
 ```bash
-genviral.sh analytics-refresh --id REFRESH_ID
+genviral analytics-refresh --id REFRESH_ID
 ```
 
 Returns: `status` (pending/processing/completed/failed), `credits_used`, `free_refresh_used`, `started_at`, `completed_at`, `error`.
@@ -143,9 +143,9 @@ Returns: `status` (pending/processing/completed/failed), `credits_used`, `free_r
 List other workspace/personal scopes with tracked accounts.
 
 ```bash
-genviral.sh analytics-workspace-suggestions
-genviral.sh get-analytics-workspace-suggestions
-genviral.sh analytics-workspace-suggestions --json
+genviral analytics-workspace-suggestions
+genviral get-analytics-workspace-suggestions
+genviral analytics-workspace-suggestions --json
 ```
 
 ---
@@ -154,9 +154,9 @@ genviral.sh analytics-workspace-suggestions --json
 Generate a one-call TikTok trend brief for a keyword (hashtags, sounds, creators, posting windows, hook angles, and sample videos).
 
 ```bash
-genviral.sh trend-brief --keyword "morning routine"
-genviral.sh trend-brief --keyword "fitness" --range 24h --limit 15
-genviral.sh get-trend-brief --keyword "grwm" --range 30d --json
+genviral trend-brief --keyword "morning routine"
+genviral trend-brief --keyword "fitness" --range 24h --limit 15
+genviral get-trend-brief --keyword "grwm" --range 30d --json
 ```
 
 Options:
@@ -181,10 +181,10 @@ Use this when asked to "research a niche":
 
 ```bash
 # 1) Baseline trend picture
-genviral.sh trend-brief --keyword "YOUR NICHE" --range 7d --limit 10
+genviral trend-brief --keyword "YOUR NICHE" --range 7d --limit 10
 
 # 2) Fresh momentum check
-genviral.sh trend-brief --keyword "YOUR NICHE" --range 24h --limit 10
+genviral trend-brief --keyword "YOUR NICHE" --range 24h --limit 10
 ```
 
 Then combine with competitor deep-dive (`docs/references/competitor-research.md`) and output:

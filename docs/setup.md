@@ -39,7 +39,7 @@ Before creating any content, understand the competitive landscape. This takes 15
 
 Read `docs/references/competitor-research.md` for the full process. The short version:
 
-1. Run `genviral.sh trend-brief --keyword "NICHE" --range 7d --limit 10` (and optionally `24h`) for fast niche intelligence.
+1. Run `genviral trend-brief --keyword "NICHE" --range 7d --limit 10` (and optionally `24h`) for fast niche intelligence.
 2. Ask: "Who else is making content for this niche? Any accounts you admire or follow?"
 3. Use the browser tool to search TikTok (and Instagram if relevant) for the niche keywords.
 4. Find 3-5 accounts posting in this space.
@@ -56,7 +56,11 @@ This research shapes every creative decision from here on.
 
 Now figure out the visual approach.
 
-**First, set up API access:**
+**First, install the CLI and set up API access:**
+
+```bash
+npm install -g @genviral/cli
+```
 
 Get the API key from https://www.genviral.io (Settings > API Keys), then:
 
@@ -66,7 +70,7 @@ export GENVIRAL_API_KEY="your_public_id.your_secret"
 
 Test it:
 ```bash
-genviral.sh accounts
+genviral accounts
 ```
 
 If this returns connected accounts, you are good.
@@ -75,13 +79,13 @@ If this returns connected accounts, you are good.
 
 **Option A: Use an existing image pack**
 ```bash
-genviral.sh list-packs
+genviral list-packs
 ```
 Show them what is available. If they like one, great. Set it in config or pass it per-slideshow.
 
 **Option B: Create a new pack**
 Ask what kind of images fit their brand. Then either:
-- Help them upload images: `genviral.sh create-pack --name "My Pack"` then `genviral.sh add-pack-image --pack-id X --image-url "https://..."`
+- Help them upload images: `genviral create-pack --name "My Pack"` then `genviral add-pack-image --pack-id X --image-url "https://..."`
 - Suggest they create one in the Genviral UI (easier for bulk uploads)
 
 **Option C: Generate images per post**
@@ -106,9 +110,9 @@ Make the first post together. This is iterative -- do not aim for perfect on the
 4. Post as a TikTok draft (so they can add trending audio before publishing)
 
 ```bash
-genviral.sh generate --prompt "Your prompt here" --pack-id PACK_ID --slides 5
-genviral.sh render --id SLIDESHOW_ID
-genviral.sh create-post --caption "your caption" --media-type slideshow --media-urls "url1,url2,..." --accounts ACCOUNT_ID --tiktok-post-mode MEDIA_UPLOAD --tiktok-privacy SELF_ONLY
+genviral generate --prompt "Your prompt here" --pack-id PACK_ID --slides 5
+genviral render --id SLIDESHOW_ID
+genviral create-post --caption "your caption" --media-type slideshow --media-urls "url1,url2,..." --accounts ACCOUNT_ID --tiktok-post-mode MEDIA_UPLOAD --tiktok-privacy SELF_ONLY
 ```
 
 After posting, log the hook text, category, and CTA to `workspace/performance/hook-tracker.json`. This is the start of the feedback loop.
@@ -121,7 +125,7 @@ The skill gets smarter over time, but only if you actually track results.
 
 After the first post goes live (give it 48-72 hours minimum before checking):
 
-1. Pull analytics: `genviral.sh analytics-posts --range 7d --sort-by views --sort-order desc`
+1. Pull analytics: `genviral analytics-posts --range 7d --sort-by views --sort-order desc`
 2. For BYO TikTok drafts, match rows by `genviralPostId` or `externalId` rather than analytics `id`
 3. Update `workspace/performance/hook-tracker.json` with the actual view and engagement numbers
 4. Apply the diagnostic framework (see `docs/references/analytics-loop.md`)
@@ -263,6 +267,6 @@ openclaw cron runs --id <job-id>      # check run history
 
 If you're using the skill outside OpenClaw, you can still automate with system cron jobs or any scheduler/orchestrator:
 
-- Run `scripts/genviral.sh` commands directly in your own cron jobs
+- Run `genviral` commands directly in your own cron jobs (or `./scripts/genviral.sh` from the skill dir to auto-load `defaults.yaml`)
 - Or run an agent runner with the same prompts used above
 - Keep the same guardrails: pinned_images, visual review gate, and performance logging in `workspace/performance/log.json`

@@ -5,9 +5,9 @@ Check subscription status, tier, credits usage, and renewal dates.
 ## Command
 
 ```bash
-genviral.sh subscription              # human-friendly output
-genviral.sh subscription --json       # raw JSON data
-genviral.sh get-subscription          # alias
+genviral subscription              # human-friendly output
+genviral subscription --json       # raw JSON data
+genviral get-subscription          # alias
 ```
 
 ### Options

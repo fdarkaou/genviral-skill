@@ -10,7 +10,7 @@ Use these templates when generating slideshows via the genviral API. Before usin
 
 If you are using a pack for slideshow backgrounds, this is required. **Do not skip any step.**
 
-1. Run `genviral.sh get-pack --id PACK_ID` and collect all `images[].url` and `images[].metadata` values.
+1. Run `genviral get-pack --id PACK_ID` and collect all `images[].url` and `images[].metadata` values.
 2. **Use AI metadata first:** Read each image's `metadata.description` and `metadata.keywords` to understand what it shows. This lets you shortlist candidates without fetching every image visually.
 3. **Use vision tools when needed:** For images with `pending`/`failed` metadata, or when you need to assess readability (clean space, background complexity, text overlay suitability), use a vision/image tool.
 4. Plan your slides first (hook text, body text per slide), then map the best-matching image to each slide based on metadata + visual analysis.

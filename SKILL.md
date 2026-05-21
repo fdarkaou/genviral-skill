@@ -5,7 +5,7 @@ description: Complete genviral Partner API automation. Create and schedule posts
 
 # genviral Partner API Skill
 
-> **TL;DR:** Wraps genviral's Partner API into 60+ bash commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. TikTok copy flow: `copy-tiktok-preview` → `copy-tiktok-import` (with exactly one of `pack_id` or `pack_images`). Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Analytics correlation: treat `analyticsId`/`id`, `platformPostId`, and `genviralPostId` as different identifiers; use `genviralPostId` or `externalId` to map analytics rows back to created posts. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
+> **TL;DR:** Uses the `@genviral/cli` npm package for 60+ Partner API commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. TikTok copy flow: `copy-tiktok-preview` → `copy-tiktok-import` (with exactly one of `pack_id` or `pack_images`). Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Analytics correlation: treat `analyticsId`/`id`, `platformPostId`, and `genviralPostId` as different identifiers; use `genviralPostId` or `externalId` to map analytics rows back to created posts. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
 
 ## What This Skill Does
 
@@ -97,8 +97,8 @@ genviral/
       competitor-insights.md # Competitor research findings
 
   scripts/
-    genviral.sh             # Main API wrapper (all commands)
-    update-skill.sh         # Self-updater
+    genviral.sh               # Optional wrapper that delegates to the npm CLI and sets GENVIRAL_CONFIG
+    update-skill.sh           # Self-updater
 ```
 
 ## Command Routing
@@ -172,13 +172,35 @@ These apply regardless of what docs you've loaded:
 
 6. **Respect `workspace/`** — all instance data lives here. Do not write state files to the skill root.
 
-## Script Usage
+## CLI Install
+
+Install the Partner API CLI once globally:
 
 ```bash
-/path/to/genviral/scripts/genviral.sh <command> [options]
+npm install -g @genviral/cli
 ```
 
-Requires `GENVIRAL_API_KEY` as an environment variable (format: `public_id.secret`). Loads defaults from `defaults.yaml`. Set `GENVIRAL_WORKSPACE_DIR` to override the workspace path (defaults to `workspace/` relative to the skill dir).
+The npm package publishes `genviral` and `genviral-cli`. Prefer the `genviral` binary in instructions and automation.
+
+Local install from the monorepo (before npm publish):
+
+```bash
+pnpm --filter @genviral/partner-api-contracts pack --pack-destination /tmp
+pnpm --filter @genviral/cli pack --pack-destination /tmp
+npm install -g /tmp/genviral-partner-api-contracts-0.1.0.tgz /tmp/genviral-cli-0.1.0.tgz
+```
+
+The skill's `scripts/genviral.sh` is only a convenience wrapper. It forwards to the npm `genviral` binary and sets `GENVIRAL_CONFIG` to this skill's `defaults.yaml` when that variable is not already set. Do not document or depend on it as a separate shell implementation of Partner API commands.
+
+## CLI Usage
+
+```bash
+genviral <command> [options]
+# or from the skill directory:
+./scripts/genviral.sh <command> [options]
+```
+
+Requires `GENVIRAL_API_KEY` as an environment variable (format: `public_id.secret`). The CLI loads defaults from `--config` or `GENVIRAL_CONFIG`; the skill wrapper points `GENVIRAL_CONFIG` at `defaults.yaml` for local skill runs. Set `GENVIRAL_WORKSPACE_DIR` to override the workspace path (defaults to `workspace/` relative to the skill dir).
 
 ## Auto-Updates
 
