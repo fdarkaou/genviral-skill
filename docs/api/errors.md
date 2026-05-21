@@ -49,7 +49,8 @@ The slideshow has not been rendered yet. Run `render` first.
 - `403 tier_not_allowed`: your tier does not permit Partner API posting
 
 **`create-post` / `update-post` returns 422**
-- Check `--settings-json` is valid JSON and uses Partner API keys (e.g. `instagram`, not dashboard-only names)
+- Check `--settings-json` is valid JSON and uses Partner API keys (e.g. `instagram`, not dashboard-only names like `coverUrl`)
+- Instagram Reel cover fields: `--instagram-cover-url`, `--instagram-thumb-offset-ms`, `--instagram-share-to-feed` (BYO Instagram + video only)
 - Unknown provider under `settings` → `422 invalid_payload`
 - `update-post` with no fields → provide at least one patch field
 

@@ -73,7 +73,10 @@ genviral create-post \
 | --- | --- | --- |
 | TikTok | Top-level `tiktok` | `--tiktok-*`, `--auto-add-music`, etc. |
 | Pinterest | Top-level `pinterest` | `--pinterest-*` |
-| X, Instagram, Facebook, LinkedIn, Reddit, YouTube, Threads, Bluesky | `settings.<provider>` | Use `--settings-json` or `--settings-file` |
+| YouTube | `settings.youtube` | `--youtube-title`, `--youtube-description`, `--youtube-type` |
+| Instagram | `settings.instagram` or `settings.instagram-standalone` | `--instagram-post-type`, `--instagram-cover-url`, `--instagram-thumb-offset-ms`, `--instagram-share-to-feed`, etc. |
+| X | `settings.x` | `--x-who-can-reply`, `--x-made-with-ai`, `--x-paid-partnership`, `--x-community` |
+| Facebook, LinkedIn, Reddit, Threads, Bluesky | `settings.<provider>` | `--settings-json` / `--settings-file` |
 
 On **update**, use top-level `tiktok` / `pinterest` (CLI `--tiktok-*` / `--pinterest-*`, or `--clear-tiktok` / `--clear-pinterest`). Do not put TikTok or Pinterest under `settings` — same rule as create.
 
@@ -223,9 +226,9 @@ genviral create-post \
 | `is_trial_reel` | `--instagram-trial-reel` | Trial reel flag for video. |
 | `graduation_strategy` | `--instagram-graduation-strategy` | `MANUAL` or `SS_PERFORMANCE` with trial reels. |
 | `collaborators` | `--instagram-collaborators` | Comma-separated usernames → `[{ "label": "..." }]`. Ignored for stories. |
-| `cover_url` | `--instagram-cover-url` | Custom Reel cover image URL. Takes priority over `thumb_offset_ms`. Video + `post_type: post` only. |
-| `thumb_offset_ms` | `--instagram-thumb-offset-ms` | Reel frame thumbnail offset in ms when no `cover_url`. Video + `post_type: post` only. |
-| `share_to_feed` | `--instagram-share-to-feed` | Share Reel to main feed. Default `true`. Set `false` for Reels tab only. |
+| `cover_url` | `--instagram-cover-url` | Custom Reel cover image URL. Takes priority over `thumb_offset_ms`. Video + `post_type: post` only. Must be publicly accessible. **BYO Instagram only.** |
+| `thumb_offset_ms` | `--instagram-thumb-offset-ms` | Reel frame thumbnail offset in ms when no `cover_url`. Video + `post_type: post` only. **BYO Instagram only.** |
+| `share_to_feed` | `--instagram-share-to-feed` | Share Reel to main feed. Default `true`. Set `false` for Reels tab only. **BYO Instagram only.** |
 
 Do not use `--music-url` with Instagram accounts (TikTok-only).
 
@@ -333,11 +336,14 @@ Provider settings on update:
 ```bash
 genviral update-post \
   --id POST_ID \
-  --settings-json '{"youtube":{"title":"Updated title"},"instagram":{"post_type":"story"}}' \
-  --pinterest-board-id "NEW_BOARD_ID"
+  --instagram-cover-url "https://cdn.example.com/new-cover.jpg" \
+  --instagram-share-to-feed false
 ```
 
-- `--settings-json` / `--settings-file` — partial `settings` patch (YouTube, X, Instagram, Reddit, etc.).
+Partial Instagram patches merge with stored settings — updating only `--instagram-share-to-feed` keeps an existing `--instagram-cover-url`.
+
+- `--instagram-*`, `--youtube-*`, and `--x-*` flags work on update the same as create.
+- `--settings-json` / `--settings-file` — partial `settings` patch for other providers.
 - TikTok/Pinterest — same flags as create, or `--clear-tiktok` / `--clear-pinterest`.
 - `external_id` is **immutable** after create; changing it returns `409 external_id_immutable`.
 - At least one field required; empty body → `422 invalid_payload`.
