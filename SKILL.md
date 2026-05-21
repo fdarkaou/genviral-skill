@@ -97,7 +97,7 @@ genviral/
       competitor-insights.md # Competitor research findings
 
   scripts/
-    genviral.sh               # Thin wrapper around @genviral/cli (sets GENVIRAL_CONFIG)
+    genviral.sh               # Optional wrapper that delegates to the npm CLI and sets GENVIRAL_CONFIG
     update-skill.sh           # Self-updater
 ```
 
@@ -180,6 +180,8 @@ Install the Partner API CLI once globally:
 npm install -g @genviral/cli
 ```
 
+The npm package publishes `genviral` and `genviral-cli`. Prefer the `genviral` binary in instructions and automation.
+
 Local install from the monorepo (before npm publish):
 
 ```bash
@@ -188,9 +190,9 @@ pnpm --filter @genviral/cli pack --pack-destination /tmp
 npm install -g /tmp/genviral-partner-api-contracts-0.1.0.tgz /tmp/genviral-cli-0.1.0.tgz
 ```
 
-The skill's `scripts/genviral.sh` is a thin wrapper that forwards to `genviral` and auto-loads this skill's `defaults.yaml` via `GENVIRAL_CONFIG`.
+The skill's `scripts/genviral.sh` is only a convenience wrapper. It forwards to the npm `genviral` binary and sets `GENVIRAL_CONFIG` to this skill's `defaults.yaml` when that variable is not already set. Do not document or depend on it as a separate shell implementation of Partner API commands.
 
-## Script Usage
+## CLI Usage
 
 ```bash
 genviral <command> [options]
@@ -198,7 +200,7 @@ genviral <command> [options]
 ./scripts/genviral.sh <command> [options]
 ```
 
-Requires `GENVIRAL_API_KEY` as an environment variable (format: `public_id.secret`). Loads defaults from `defaults.yaml`. Set `GENVIRAL_WORKSPACE_DIR` to override the workspace path (defaults to `workspace/` relative to the skill dir).
+Requires `GENVIRAL_API_KEY` as an environment variable (format: `public_id.secret`). The CLI loads defaults from `--config` or `GENVIRAL_CONFIG`; the skill wrapper points `GENVIRAL_CONFIG` at `defaults.yaml` for local skill runs. Set `GENVIRAL_WORKSPACE_DIR` to override the workspace path (defaults to `workspace/` relative to the skill dir).
 
 ## Auto-Updates
 

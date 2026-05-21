@@ -31,7 +31,7 @@ The skill runs a closed loop:
 ## Quick Start
 
 ```bash
-# Install the CLI (once)
+# Install the npm CLI (once)
 npm install -g @genviral/cli
 
 # Set your API key
@@ -101,7 +101,7 @@ cd /path/to/your/workspace/agent/skills
 git clone https://github.com/fdarkaou/genviral-skill.git genviral
 ```
 
-Requires: `bash` 4+, `curl`, `jq`, and a [Genviral](https://genviral.io) account with Partner API access.
+Requires: Node.js 20.19+ or 22.12+ and a [Genviral](https://genviral.io) account with Partner API access.
 
 ## What's Inside
 
@@ -145,13 +145,13 @@ genviral/
     analytics-loop.md       # Full analytics feedback loop and weekly review process
     competitor-research.md  # How to research competitors
 
-  scripts/
-    genviral             # 44+ commands wrapping every Partner API endpoint
-    update-skill.sh         # Self-updater (keeps skill files current, never touches workspace/)
-
   prompts/
     slideshow.md            # Prompt templates for slideshow generation
     hooks.md                # Prompt templates for hook brainstorming
+
+  scripts/
+    genviral.sh             # Optional wrapper that delegates to the npm CLI and sets GENVIRAL_CONFIG
+    update-skill.sh         # Self-updater (keeps skill files current, never touches workspace/)
 ```
 
 ## Commands
@@ -165,9 +165,9 @@ genviral/
 | **Templates** | `list-templates`, `get-template`, `create-template`, `update-template`, `delete-template`, `create-template-from-slideshow` |
 | **Analytics & Trends** | `analytics-summary`, `analytics-posts`, `analytics-targets`, `analytics-target-create`, `analytics-target-refresh`, `analytics-refresh`, `analytics-workspace-suggestions`, `trend-brief` |
 
-```bash
-genviral help  # full command list
-```
+The `@genviral/cli` npm package publishes the `genviral` and `genviral-cli` binaries. Use `genviral help` for the full command list.
+
+From the skill directory, `./scripts/genviral.sh <command> [options]` is available only as a convenience wrapper. It does not implement commands itself; it forwards to the npm `genviral` binary and points `GENVIRAL_CONFIG` at this skill's `defaults.yaml` when that variable is not already set.
 
 ## Auto-Updates
 
