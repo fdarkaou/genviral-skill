@@ -11,11 +11,17 @@ genviral accounts
 genviral accounts --json
 ```
 
-Returns:
-- Account ID (use in --accounts for create-post)
-- Platform (tiktok, instagram, etc.)
-- Type (byo or hosted)
-- Username, display name, status
+Returns per account:
+- `id` — UUID for `--accounts` on `create-post`
+- `platform` (tiktok, instagram, twitter, youtube, pinterest, etc.)
+- `type` — `byo` or `hosted`
+- `username`, `display_name`, `status`
+- `capabilities.supported_content_kinds` — e.g. `text_only`, `single_video`, `multi_image`
+- `capabilities.caption_limit` — max caption length for that account
+- `capabilities.media_limits` — e.g. `max_images`, `max_video_seconds`
+- `capabilities.settings_schema` — dashboard composer schema; **for create payloads use** [Create Post](https://docs.genviral.io/api-reference/create-post) **field tables**, not `settings_schema` alone
+
+Hosted accounts: caption cap 500 chars; usually no `text_only`. TikTok hosted cannot use BYO-only `tiktok` settings.
 
 ## upload
 Upload a file to genviral's CDN using the presigned URL flow. Returns a CDN URL you can use in posts.

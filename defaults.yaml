@@ -1,7 +1,7 @@
 # genviral Partner API Configuration
 # ==================================================
 # API key set via: GENVIRAL_API_KEY environment variable
-# Run `genviral list-accounts` to find your account IDs
+# Run `genviral accounts` to find your account IDs
 # Run `genviral list-packs` to find your pack IDs
 # ==================================================
 
@@ -25,7 +25,7 @@ content:
     text_width: null
 
 posting:
-  # Your default account ID (run list-accounts to find it)
+  # Your default account ID (run `genviral accounts` to find it)
   default_account_ids: ""
   privacy_level: "PUBLIC_TO_EVERYONE"
   post_mode: "DIRECT_POST"

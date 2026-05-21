@@ -8,14 +8,25 @@ Generates slideshows, posts them across platforms, tracks what performs, and adj
 
 | Platform | Posting | Analytics | Notes |
 |----------|---------|-----------|-------|
-| **TikTok** | Yes | Yes | Slideshow carousels, videos. BYO or hosted accounts. |
-| **Instagram** | Yes | Yes | Reels, stories, carousels, square/portrait/landscape posts. |
-| **YouTube** | Yes | Yes | Shorts and standard video uploads. |
-| **Facebook** | Yes | - | Posts, square posts, event covers. |
-| **Pinterest** | Yes | - | Standard pins, square pins. |
-| **LinkedIn** | Yes | - | Posts, square posts, company pages. |
+| **TikTok** | Yes | Yes | Video and slideshow. BYO or hosted. TikTok settings are top-level `tiktok` on create (BYO only for TikTok-specific fields). |
+| **Instagram** | Yes | Yes | Feed/reel (`post_type: post`) or story. Use `settings.instagram` or `settings.instagram-standalone`. |
+| **YouTube** | Yes | Yes | Video posts with `settings.youtube` (title, visibility, tags, etc.). |
+| **Facebook** | Yes | - | Posts with optional `settings.facebook.url` link attachment. |
+| **Pinterest** | Yes | - | Image/slideshow pins; top-level `pinterest.board_id` required (no account default). |
+| **LinkedIn** | Yes | - | Posts and image carousels via `settings.linkedin` or `settings.linkedin-page`. |
+| **X / Twitter** | Yes | - | Video or text-only (`media: null` when account supports `text_only`). `settings.x` or `settings.twitter`. |
+| **Threads** | Yes | - | `settings.threads: {}` or omit. |
+| **Bluesky** | Yes | - | `settings.bluesky: {}` or omit. |
+| **Reddit** | Yes | - | Requires `settings.reddit` with `subreddit` entries; `caption` is the post body. |
 
-Analytics (performance tracking, post metrics, account insights) is available for TikTok, Instagram, and YouTube.
+Not every account supports every content type. Run `genviral accounts` and read each account's `capabilities` before posting.
+
+Analytics (performance tracking, post metrics, account insights) is available for TikTok, Instagram, and YouTube only.
+
+For raw `POST /posts` JSON and provider field tables, use the canonical docs — do not rely on skill-local copies of the full API spec:
+
+- [llms.txt](https://docs.genviral.io/llms.txt) — agent doc index
+- [Create Post](https://docs.genviral.io/api-reference/create-post) — request body and `settings.*` / `tiktok` / `pinterest` shapes
 
 ## How It Works
 
@@ -205,7 +216,9 @@ Also available standalone: [fdarkaou/meta-ads-skill](https://github.com/fdarkaou
 ## Links
 
 - [Genviral](https://genviral.io)
-- [Partner API docs](https://docs.genviral.io)
+- [Partner API docs](https://docs.genviral.io) — canonical REST reference alongside `@genviral/cli`
+- [llms.txt](https://docs.genviral.io/llms.txt) — full doc index for agents
+- [Create Post](https://docs.genviral.io/api-reference/create-post) — `POST /posts` payload reference
 - [OpenClaw](https://openclaw.ai)
 - [meta-ads-skill](https://github.com/fdarkaou/meta-ads-skill) — standalone repo
 

@@ -1,15 +1,15 @@
 ---
 name: genviral
-description: Complete genviral Partner API automation. Create and schedule posts (video + slideshow) across TikTok, Instagram, and any supported platform. Includes slideshow generation, file uploads, template/pack management, analytics, and full content pipeline automation.
+description: Complete genviral Partner API automation. Create and schedule posts (video, slideshow, text-only) across TikTok, Instagram, YouTube, Pinterest, LinkedIn, Facebook, X, Threads, Bluesky, Reddit, and other supported platforms. Includes slideshow generation, file uploads, template/pack management, analytics, and full content pipeline automation.
 ---
 
 # genviral Partner API Skill
 
-> **TL;DR:** Uses the `@genviral/cli` npm package for 60+ Partner API commands. Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. TikTok copy flow: `copy-tiktok-preview` → `copy-tiktok-import` (with exactly one of `pack_id` or `pack_images`). Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Analytics correlation: treat `analyticsId`/`id`, `platformPostId`, and `genviralPostId` as different identifiers; use `genviralPostId` or `externalId` to map analytics rows back to created posts. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
+> **TL;DR:** Uses the `@genviral/cli` npm package for 60+ Partner API commands; **[docs.genviral.io](https://docs.genviral.io)** is the canonical REST reference (start with [`llms.txt`](https://docs.genviral.io/llms.txt) and [Create Post](https://docs.genviral.io/api-reference/create-post) for `POST /posts` payload shapes). Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. TikTok copy flow: `copy-tiktok-preview` → `copy-tiktok-import` (with exactly one of `pack_id` or `pack_images`). Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Analytics correlation: treat `analyticsId`/`id`, `platformPostId`, and `genviralPostId` as different identifiers; use `genviralPostId` or `externalId` to map analytics rows back to created posts. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
 
 ## What This Skill Does
 
-- **Multi-Platform Posting:** Video or slideshow posts across TikTok, Instagram, YouTube, Pinterest, LinkedIn, Facebook
+- **Multi-Platform Posting:** Video, slideshow, or text-only posts across TikTok, Instagram, YouTube, Pinterest, LinkedIn, Facebook, X, Threads, Bluesky, Reddit (check each account's `capabilities` from `GET /accounts`)
 - **Studio AI Generation:** Generate images (sync) and videos (async) via AI models through the API
 - **File Management:** Upload videos/images to genviral's CDN; organize with folders
 - **Folder Management:** Nested folders for uploads, AI images, AI videos, and slideshows
@@ -107,6 +107,7 @@ Load only what you need for the current task:
 
 | Task | Read |
 |------|------|
+| Raw `POST /posts` JSON, provider settings, idempotency, scheduling rules | [docs.genviral.io/llms.txt](https://docs.genviral.io/llms.txt) + [Create Post](https://docs.genviral.io/api-reference/create-post) (do not duplicate the full spec in skill docs) |
 | Account discovery, file upload | `docs/api/accounts-files.md` |
 | Folder management (create, list, move, delete, items) | `docs/api/folders.md` |
 | Create, update, list, delete posts | `docs/api/posts.md` |
@@ -155,6 +156,25 @@ When the user wants to copy a TikTok slideshow idea but generate new visuals:
 4. Treat `analyticsId`/legacy `id` as the analytics-row identifier only.
 5. Treat `platformPostId` as the platform-native TikTok/Instagram/YouTube post identifier only.
 6. For BYO TikTok drafts (`MEDIA_UPLOAD`), do not assume a draft upload is correlated immediately. The draft `publish_id` becomes matchable only after the human posts from TikTok and Genviral resolves it to the final public TikTok video ID.
+
+## Canonical API Reference
+
+Use the CLI for day-to-day automation. For REST payloads, validation rules, and provider-specific fields, treat **[docs.genviral.io](https://docs.genviral.io)** as source of truth alongside the CLI:
+
+1. **[`llms.txt`](https://docs.genviral.io/llms.txt)** — full doc index for agents (prefer over copying endpoint lists into prompts).
+2. **[Create Post](https://docs.genviral.io/api-reference/create-post)** — `POST /api/partner/v1/posts` body: `caption`, `accounts`, `media`, `scheduled_at`, `external_id`, `music_url`, and provider settings.
+
+Do not paste or maintain a full Partner API spec in skill files. Summarize workflows here; fetch shapes from the docs above when building or debugging requests.
+
+**Posting payload reminders (see Create Post for tables and limits):**
+
+- Call `GET /accounts` first; use each account's `capabilities` (`supported_content_kinds`, `caption_limit`). `capabilities.settings_schema` reflects the dashboard composer and may not match Partner API field names.
+- TikTok and Pinterest settings are **top-level** `tiktok` and `pinterest` on create — not `settings.tiktok` / `settings.pinterest`.
+- Other platforms use `settings.<provider>` (e.g. `settings.youtube`, `settings.x`, `settings.instagram` or `settings.instagram-standalone`, `settings.reddit`).
+- Omit `media` only when every selected account supports `text_only`.
+- `music_url` is TikTok-only (rejected if any non-TikTok account is selected).
+- `scheduled_at` must be ISO 8601 with a timezone offset; true schedules need to be at least 2 minutes in the future.
+- Prefer `external_id` for idempotency (max 128 chars); same key + same payload replays with `duplicate: true`.
 
 ## Non-Negotiable Rules
 
@@ -220,11 +240,12 @@ bash scripts/update-skill.sh --force   # force re-apply even if already current
 
 ## Notes
 
-- Works with any platform genviral supports (TikTok, Instagram, etc.)
-- Supports both video and slideshow posts
-- Works with hosted and BYO accounts
+- Partner API base URL: `https://www.genviral.io/api/partner/v1` (see [Introduction](https://docs.genviral.io/api-reference/introduction))
+- Posting: TikTok, Instagram, YouTube, Facebook, Pinterest, LinkedIn, X, Threads, Bluesky, Reddit (analytics: TikTok, Instagram, YouTube only)
+- Supports video, slideshow, and text-only posts (per account `capabilities`)
+- Works with hosted and BYO accounts; TikTok-specific settings require BYO TikTok on create
 - Posts can be scheduled or queued for immediate publishing
-- TikTok slideshow drafts: use `post_mode: MEDIA_UPLOAD` to save to drafts inbox for audio addition
+- TikTok slideshow drafts: use top-level `tiktok.post_mode: MEDIA_UPLOAD` to save to drafts inbox for audio addition
 - BYO TikTok draft uploads (`MEDIA_UPLOAD`) create the Genviral post immediately, but the final public TikTok video ID exists only after the user publishes in TikTok. In `analytics-posts`, use `genviralPostId` or `externalId` for correlation; treat `analyticsId`/legacy `id` as the analytics-row ID and `platformPostId` as the TikTok-native ID.
 
 ## Meta Ads Companion (Included)
