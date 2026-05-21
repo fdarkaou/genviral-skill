@@ -1,6 +1,8 @@
 # Genviral Skill
 
-An [OpenClaw](https://openclaw.ai) skill for the [Genviral](https://genviral.io) Partner API.
+An agent skill for the [Genviral](https://genviral.io) Partner API — works with any coding agent that reads `SKILL.md` and can run shell commands.
+
+Compatible with [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://openai.com/codex), [Cursor](https://cursor.com), [OpenClaw](https://openclaw.ai), Hermes, and other agent runtimes.
 
 Generates slideshows, posts them across platforms, tracks what performs, and adjusts strategy based on real data. Every cycle makes the next one better.
 
@@ -15,9 +17,7 @@ Generates slideshows, posts them across platforms, tracks what performs, and adj
 | **Pinterest** | Yes | - | Image/slideshow pins; top-level `pinterest.board_id` required (no account default). |
 | **LinkedIn** | Yes | - | Posts and image carousels via `settings.linkedin` or `settings.linkedin-page`. |
 | **X / Twitter** | Yes | - | Video or text-only (`media: null` when account supports `text_only`). `settings.x` or `settings.twitter`. |
-| **Threads** | Yes | - | `settings.threads: {}` or omit. |
 | **Bluesky** | Yes | - | `settings.bluesky: {}` or omit. |
-| **Reddit** | Yes | - | Requires `settings.reddit` with `subreddit` entries; `caption` is the post body. |
 
 Not every account supports every content type. Run `genviral accounts` and read each account's `capabilities` before posting.
 
@@ -105,12 +105,21 @@ directly inside `--prompt`.
 
 ## Installation
 
-Clone into your OpenClaw skills directory:
+Clone the repo, then install it wherever your agent loads skills from:
+
+| Agent | Typical path |
+| --- | --- |
+| Claude Code | `~/.claude/skills/` or `.claude/skills/` |
+| Codex | `~/.codex/skills/` or `.codex/skills/` |
+| Cursor | `~/.cursor/skills/` or `.cursor/skills/` |
+| OpenClaw | your workspace `skills/` directory |
+| Other (Hermes, custom runners) | your agent's skills directory |
 
 ```bash
-cd /path/to/your/workspace/agent/skills
 git clone https://github.com/fdarkaou/genviral-skill.git genviral
 ```
+
+Point your agent at the `genviral/` folder. `SKILL.md` is the entry point; `docs/` holds the detailed workflows.
 
 Requires: Node.js 20.19+ or 22.12+ and a [Genviral](https://genviral.io) account with Partner API access.
 
@@ -219,7 +228,6 @@ Also available standalone: [fdarkaou/meta-ads-skill](https://github.com/fdarkaou
 - [Partner API docs](https://docs.genviral.io) — canonical REST reference alongside `@genviral/cli`
 - [llms.txt](https://docs.genviral.io/llms.txt) — full doc index for agents
 - [Create Post](https://docs.genviral.io/api-reference/create-post) — `POST /posts` payload reference
-- [OpenClaw](https://openclaw.ai)
 - [meta-ads-skill](https://github.com/fdarkaou/meta-ads-skill) — standalone repo
 
 ## License

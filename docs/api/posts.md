@@ -76,7 +76,7 @@ genviral create-post \
 | YouTube | `settings.youtube` | `--youtube-title`, `--youtube-description`, `--youtube-type` |
 | Instagram | `settings.instagram` or `settings.instagram-standalone` | `--instagram-post-type`, `--instagram-cover-url`, `--instagram-thumb-offset-ms`, `--instagram-share-to-feed`, etc. |
 | X | `settings.x` | `--x-who-can-reply`, `--x-made-with-ai`, `--x-paid-partnership`, `--x-community` |
-| Facebook, LinkedIn, Reddit, Threads, Bluesky | `settings.<provider>` | `--settings-json` / `--settings-file` |
+| Facebook, LinkedIn, Bluesky | `settings.<provider>` | `--settings-json` / `--settings-file` |
 
 On **update**, use top-level `tiktok` / `pinterest` (CLI `--tiktok-*` / `--pinterest-*`, or `--clear-tiktok` / `--clear-pinterest`). Do not put TikTok or Pinterest under `settings` — same rule as create.
 
@@ -261,37 +261,12 @@ If both sent, `linkedin-page` wins.
 
 ---
 
-### Reddit — `settings.reddit` (required for Reddit)
-
-`caption` = post body; `subreddit[].value.title` = submission title.
-
-```bash
-genviral create-post \
-  --caption "Body text for the submission." \
-  --media-type slideshow \
-  --media-urls "https://cdn.example.com/img.jpg" \
-  --accounts "reddit_account_id" \
-  --settings-json '{"reddit":{"subreddit":[{"value":{"subreddit":"test","title":"Submission title","type":"media"}}]}}'
-```
-
-| Field | Notes |
-| --- | --- |
-| `subreddit` | Array; at least one entry. |
-| `subreddit[].value.subreddit` | Name with or without `/r/`. |
-| `subreddit[].value.title` | Reddit title (required). |
-| `subreddit[].value.type` | `self` (default), `link`, or `media`. |
-| `subreddit[].value.url` | Required when `type: "link"`. |
-| `subreddit[].value.is_flair_required` | When `true`, `flair` required. |
-| `subreddit[].value.flair` | `{ "id": "...", "name": "..." }`. |
-
----
-
-### Threads / Bluesky
+### Bluesky — `settings.bluesky`
 
 No provider-specific fields. Omit or send `{}`:
 
 ```bash
---settings-json '{"threads":{}}'
+--settings-json '{"bluesky":{}}'
 ```
 
 ---

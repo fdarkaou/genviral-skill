@@ -1,6 +1,6 @@
 ---
 name: genviral
-description: Complete genviral Partner API automation. Create and schedule posts (video, slideshow, text-only) across TikTok, Instagram, YouTube, Pinterest, LinkedIn, Facebook, X, Threads, Bluesky, Reddit, and other supported platforms. Includes slideshow generation, file uploads, template/pack management, analytics, and full content pipeline automation.
+description: Complete genviral Partner API automation. Create and schedule posts (video, slideshow, text-only) across TikTok, Instagram, YouTube, Pinterest, LinkedIn, Facebook, X, Bluesky, and other supported platforms. Includes slideshow generation, file uploads, template/pack management, analytics, and full content pipeline automation.
 ---
 
 # genviral Partner API Skill
@@ -9,7 +9,7 @@ description: Complete genviral Partner API automation. Create and schedule posts
 
 ## What This Skill Does
 
-- **Multi-Platform Posting:** Video, slideshow, or text-only posts across TikTok, Instagram, YouTube, Pinterest, LinkedIn, Facebook, X, Threads, Bluesky, Reddit (check each account's `capabilities` from `GET /accounts`)
+- **Multi-Platform Posting:** Video, slideshow, or text-only posts across TikTok, Instagram, YouTube, Pinterest, LinkedIn, Facebook, X, Bluesky (check each account's `capabilities` from `GET /accounts`)
 - **Studio AI Generation:** Generate images (sync) and videos (async) via AI models through the API
 - **File Management:** Upload videos/images to genviral's CDN; organize with folders
 - **Folder Management:** Nested folders for uploads, AI images, AI videos, and slideshows
@@ -170,7 +170,7 @@ Do not paste or maintain a full Partner API spec in skill files. Summarize workf
 
 - Call `GET /accounts` first; use each account's `capabilities` (`supported_content_kinds`, `caption_limit`). `capabilities.settings_schema` reflects the dashboard composer and may not match Partner API field names.
 - TikTok and Pinterest settings are **top-level** `tiktok` and `pinterest` on create — not `settings.tiktok` / `settings.pinterest`.
-- Other platforms use `settings.<provider>` (e.g. `settings.youtube`, `settings.x`, `settings.instagram` or `settings.instagram-standalone`, `settings.reddit`).
+- Other platforms use `settings.<provider>` (e.g. `settings.youtube`, `settings.x`, `settings.instagram` or `settings.instagram-standalone`, `settings.bluesky`).
 - Omit `media` only when every selected account supports `text_only`.
 - `music_url` is TikTok-only (rejected if any non-TikTok account is selected).
 - `scheduled_at` must be ISO 8601 with a timezone offset; true schedules need to be at least 2 minutes in the future.
@@ -241,7 +241,7 @@ bash scripts/update-skill.sh --force   # force re-apply even if already current
 ## Notes
 
 - Partner API base URL: `https://www.genviral.io/api/partner/v1` (see [Introduction](https://docs.genviral.io/api-reference/introduction))
-- Posting: TikTok, Instagram, YouTube, Facebook, Pinterest, LinkedIn, X, Threads, Bluesky, Reddit (analytics: TikTok, Instagram, YouTube only)
+- Posting: TikTok, Instagram, YouTube, Facebook, Pinterest, LinkedIn, X, Bluesky (analytics: TikTok, Instagram, YouTube only)
 - Supports video, slideshow, and text-only posts (per account `capabilities`)
 - Works with hosted and BYO accounts; TikTok-specific settings require BYO TikTok on create
 - Posts can be scheduled or queued for immediate publishing

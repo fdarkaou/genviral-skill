@@ -60,7 +60,7 @@ python3 campaign/scripts/upload_to_meta.py \
 | 1 | LP Analysis | Auto | Scrapes landing page, extracts brand identity |
 | 2 | Deep Interview | Human | 5 strategic questions about your product + audience |
 | 3 | Customer Roleplay | Opus sub-agent | AI becomes the ideal buyer — writes first-person pain, language, fears |
-| 4 | Market Research | Opus sub-agent (parallel) | Reddit + forum language mining, competitor review patterns |
+| 4 | Market Research | Opus sub-agent (parallel) | Forum and community language mining, competitor review patterns |
 | 5 | Competitor Analysis | Auto | Meta Ad Library patterns |
 | 6 | Campaign Strategy | **Approval gate** | 4-5 scored angles + ad set architecture |
 | 7 | Creative Generation | **Approval gate** | Images via Genviral Studio + copy per ad set |

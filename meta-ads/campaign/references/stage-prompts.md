@@ -68,9 +68,9 @@ Read these files first:
 
 Your task: Research what real customers in this space actually say online. Use web_search and web_fetch to:
 
-1. Search Reddit for posts about the core pain this product solves
-   - Try queries like: "reddit [problem category] frustrating", "reddit [competitor name] worth it", "reddit [job title] how do you [task]"
-   - Target subreddits: r/entrepreneur, r/marketing, r/SEO, r/startups, r/smallbusiness (adjust to niche)
+1. Search forums and communities for posts about the core pain this product solves
+   - Try queries like: "[problem category] frustrating", "[competitor name] worth it", "[job title] how do you [task]"
+   - Target niche forums, communities, and long-form discussion posts relevant to the audience
    - Find: complaints, wins, failed attempts, product comparisons
 
 2. Search for competitor reviews
@@ -81,8 +81,8 @@ Your task: Research what real customers in this space actually say online. Use w
 
 Structure your output as `market-research.md`:
 
-## REDDIT VOICE (top 20 direct quotes)
-[Real quotes from real posts. Include subreddit and approximate date. These should be usable as ad copy inspiration.]
+## CUSTOMER VOICE (top 20 direct quotes)
+[Real quotes from real posts. Include source and approximate date. These should be usable as ad copy inspiration.]
 
 ## CORE PAIN THEMES (ranked by frequency)
 [5-7 recurring themes with evidence. What do people complain about most?]

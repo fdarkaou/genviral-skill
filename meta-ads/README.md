@@ -31,7 +31,7 @@ Inspired by [Gael Breton's workflow](https://x.com/GaelBreton) — £3K spend �
 | 1 | LP Analysis | Auto | Scrapes your landing page, extracts brand identity |
 | 2 | Deep Interview | Human | 5 strategic questions about your product + audience |
 | 3 | Customer Roleplay | Opus sub-agent | AI becomes your ideal buyer — writes first-person pain, language, fears |
-| 4 | Market Research | Opus sub-agent (parallel) | Reddit + forum mining, real customer language |
+| 4 | Market Research | Opus sub-agent (parallel) | Forum and community mining, real customer language |
 | 5 | Competitor Analysis | Auto | Meta Ad Library pattern extraction |
 | 6 | Campaign Strategy | **Approval gate** | 4-5 scored angles + ad set architecture |
 | 7 | Creative Generation | **Approval gate** | Images via Genviral Studio + copy per ad set |
