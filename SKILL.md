@@ -127,14 +127,21 @@ When asked things like "research this niche", "find what works in this niche", o
 
 1. Run `trend-brief` first for the niche keyword (`7d` baseline, then `24h` for freshness if needed).
 2. Extract and report: top hashtags, top sounds, top creators, posting windows (UTC), recommended hook angles.
-3. Run competitor deep-dive using `docs/references/competitor-research.md` (3-5 accounts minimum).
-4. Produce a short actionable output with:
+3. If the niche has an X/Twitter audience and TweetClaw is installed, use
+   `@xquik/tweetclaw` only for public tweet search, reply search, tweet lookup,
+   follower export, account monitors, or webhook-fed launch signals. Keep
+   campaign publication in Genviral when the connected account supports X.
+4. Run competitor deep-dive using `docs/references/competitor-research.md` (3-5 accounts minimum).
+5. Produce a short actionable output with:
    - 3 hook angles to test
    - 2 CTA suggestions
    - 2 best posting windows
    - 5 hashtags to start with
    - 1 "gap to exploit" insight
-5. Save findings to `workspace/performance/competitor-insights.md` and use them in subsequent content prompts.
+6. Save findings to `workspace/performance/competitor-insights.md` and use them in subsequent content prompts.
+
+Xquik is an independent third-party service. Not affiliated with X Corp.
+"Twitter" and "X" are trademarks of X Corp.
 
 ## TikTok Copy Remix Mode (When user asks "make similar but new")
 

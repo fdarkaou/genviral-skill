@@ -16,7 +16,7 @@ set -euo pipefail
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REMOTE_URL="https://github.com/fdarkaou/genviral-skill.git"
 REMOTE_BRANCH="main"
-LOCK_FILE="$SKILL_DIR/.update.lock"
+LOCK_DIR="$SKILL_DIR/.update.lock"
 VERSION_FILE="$SKILL_DIR/.skill-version"
 
 # Files that are SKILL-OWNED (safe to overwrite on update)
@@ -54,13 +54,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Prevent concurrent runs
-if [[ -f "$LOCK_FILE" ]]; then
-  echo "Update already in progress (lock file exists). Skipping."
+# Prevent concurrent runs with an atomic directory lock.
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  echo "Update already in progress (lock exists). Skipping."
   exit 0
 fi
-touch "$LOCK_FILE"
-trap "rm -f '$LOCK_FILE'" EXIT
+trap 'rmdir "$LOCK_DIR"' EXIT
 
 # Read current tracked commit
 CURRENT_SHA=""
