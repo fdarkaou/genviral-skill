@@ -179,6 +179,7 @@ genviral/
 | Category | Commands |
 |----------|----------|
 | **Accounts & Files** | `accounts`, `upload`, `list-files` |
+| **Influencers** | `list-influencers`, `get-influencer` |
 | **Posts** | `create-post`, `update-post`, `retry-posts`, `list-posts`, `get-post`, `delete-posts` |
 | **Slideshows** | `generate`, `render`, `review`, `update`, `regenerate-slide`, `duplicate`, `delete`, `list-slideshows`, `copy-tiktok-preview`, `copy-tiktok-import` |
 | **Packs** | `list-packs`, `get-pack`, `create-pack`, `update-pack`, `delete-pack`, `add-pack-image`, `delete-pack-image` |

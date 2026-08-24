@@ -110,6 +110,7 @@ Load only what you need for the current task:
 | Raw `POST /posts` JSON, provider settings, idempotency, scheduling rules | [docs.genviral.io/llms.txt](https://docs.genviral.io/llms.txt) + [Create Post](https://docs.genviral.io/api-reference/create-post) (do not duplicate the full spec in skill docs) |
 | Account discovery, file upload | `docs/api/accounts-files.md` |
 | Folder management (create, list, move, delete, items) | `docs/api/folders.md` |
+| Influencers / consistent characters | `docs/api/influencers.md` |
 | Create, update, list, delete posts | `docs/api/posts.md` |
 | Slideshow generation, TikTok copy import, rendering, editing, text styles | `docs/api/slideshows.md` |
 | Pack management, image selection (ANY pack workflow) | `docs/api/packs.md` |

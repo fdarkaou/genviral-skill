@@ -59,6 +59,9 @@ controls:
 
 Generate one AI image synchronously. Returns hosted output URL immediately.
 
+For a consistent character, list influencers first (`docs/api/influencers.md`) and
+pass their `reference_image_urls` as `--image-urls`.
+
 ```bash
 # Basic image generation
 genviral studio-generate-image \
