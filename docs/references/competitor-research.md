@@ -33,6 +33,27 @@ Capture these signals as your starting baseline:
 
 This gives instant niche intelligence so your manual deep-dive is focused instead of random.
 
+### Optional X/Twitter Signal Check
+
+If the product also markets through X/Twitter, add TweetClaw as a companion research source before writing hooks:
+
+```bash
+openclaw plugins install clawhub:@xquik/tweetclaw
+```
+
+Use `openclaw plugins install npm:@xquik/tweetclaw` when the npm fallback is
+required.
+
+Use it for:
+- Search tweets and search tweet replies around the niche, product keywords, competitors, and launch terms.
+- Look up specific X/Twitter threads by URL or ID when they inspire a slideshow idea.
+- Export followers or user lookups for audience mapping.
+- Monitor accounts or webhook events for launch tracking.
+
+Use TweetClaw only for public X/Twitter research and monitoring. Keep campaign
+publication in Genviral when the connected account supports X so scheduling
+and post tracking remain in one workflow.
+
 ## Step 1: Define the Niche Keywords
 
 Before searching, nail down what niche you are searching in.

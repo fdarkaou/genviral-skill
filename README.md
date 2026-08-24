@@ -28,6 +28,30 @@ For raw `POST /posts` JSON and provider field tables, use the canonical docs —
 - [llms.txt](https://docs.genviral.io/llms.txt) — agent doc index
 - [Create Post](https://docs.genviral.io/api-reference/create-post) — request body and `settings.*` / `tiktok` / `pinterest` shapes
 
+## Optional X/Twitter Companion
+
+Genviral can publish to X/Twitter when the connected account supports it. For
+campaigns that also need public X/Twitter research or monitoring, install
+[`@xquik/tweetclaw`](https://github.com/Xquik-dev/tweetclaw) as an optional
+OpenClaw companion:
+
+```bash
+openclaw plugins install clawhub:@xquik/tweetclaw
+```
+
+Use `openclaw plugins install npm:@xquik/tweetclaw` when the npm fallback is
+required.
+
+Useful companion workflows:
+
+- Search tweets and search tweet replies for product, niche, competitor, and hook-angle research before generating slideshows.
+- Look up tweets by URL or ID when a TikTok or Instagram idea came from an X/Twitter thread.
+- Export followers, monitor accounts, or receive webhook events for launch and campaign tracking.
+- Keep campaign publication in Genviral so scheduling, account capabilities, and post tracking remain in one workflow.
+
+Xquik is an independent third-party service. Not affiliated with X Corp.
+"Twitter" and "X" are trademarks of X Corp.
+
 ## How It Works
 
 The skill runs a closed loop:
