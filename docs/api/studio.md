@@ -4,12 +4,18 @@ Generate AI images and videos through the Partner API. Same model catalog and cr
 
 All commands are key-scoped and use the standard Partner API response envelope.
 
+> **Image and video generation are both async.** `studio-generate-image` returns an `image_id`
+> with `status: "processing"` and `output_url: null`. Poll `studio-image-status` until
+> `output_url` is set. Credits are charged when the job starts (refunded on failure), so always
+> keep the `image_id`. Lost it? See "Recover a lost result" below.
+
 ## Commands
 
 | Command | API | Description |
 |---------|-----|-------------|
 | `studio-models` | `GET /studio/models` | List available image/video models |
-| `studio-generate-image` | `POST /studio/images/generate` | Generate an image synchronously |
+| `studio-generate-image` | `POST /studio/images/generate` | Start async image generation (returns `image_id`) |
+| `studio-image-status` | `GET /studio/images/{imageId}` | Poll image generation status |
 | `studio-generate-video` | `POST /studio/videos/generate` | Start async video generation |
 | `studio-video-status` | `GET /studio/videos/{videoId}` | Poll video generation status |
 
@@ -57,7 +63,11 @@ controls:
 
 ## studio-generate-image
 
-Generate one AI image synchronously. Returns hosted output URL immediately.
+Start one AI image generation job. Returns `image_id` at once; the image is ready when
+`studio-image-status` shows an `output_url` (a 1:1 `google/nano-banana-2` image takes about 25 s).
+
+Next CLI release (after 0.1.2): add `--wait` to submit and poll in one command, and
+`--idempotency-key <key>` to make retries safe. On 0.1.2, poll with `studio-image-status`.
 
 For a consistent character, list influencers first (`docs/api/influencers.md`) and
 pass their `reference_image_urls` as `--image-urls`.
@@ -110,14 +120,46 @@ genviral studio-generate-image \
 | `--scale-factor` | number | No | Upscale factor |
 | `--raw-params` | JSON | No | Model-specific passthrough params |
 | `--json` | flag | No | Output raw JSON data |
+| `--idempotency-key` | string | No | Retry-safe key, max 255 chars (next CLI release). Without it the server derives one from the body, so an identical request replays the same job |
+| `--wait` | flag | No | Poll until `output_url` is set or the job fails (next CLI release) |
+| `--poll-interval` / `--poll-max` | number | No | Seconds between polls (default 5) / give up after (default 300), with `--wait` |
 
 `google/nano-banana-2` is recommended for TikTok slideshow remix workflows where you want concept continuity from a reference image while generating a new original variant.
 
 ### Response
 
-Returns `file_id`, `output_url`, `preview_url`, `credits_used`, `model_id`, and `provider`.
+Returns `image_id` (same as `job_id`), `status: "processing"`, `output_url: null`, `file_id: null`,
+`credits_used`, `model_id`, and `provider`.
 
-The `output_url` is a hosted CDN URL you can use directly in slideshows, posts, or download.
+---
+
+## studio-image-status
+
+Read one image job. Poll every ~5 s until `output_url` is set.
+
+```bash
+genviral studio-image-status --image-id IMAGE_ID --json
+# → {"image_id": "...", "status": "succeeded", "output_url": "https://cdn.vireel.io/images/studio-image-....png", "error": null, "file_id": "..."}
+```
+
+Status values: `processing` (keep polling), `succeeded` (`output_url` set), `failed` (`error` says why).
+The `error` field is `null` on success too, so check `status` or `output_url`, not whether `error` exists.
+
+The `output_url` is a hosted CDN URL you can use directly in slideshows, posts, or download. When you
+download it from a script, send a browser `User-Agent`: `cdn.vireel.io` returns 403 to Python's default one.
+
+### Recover a lost result
+
+If a script died after submit, the image still finishes and is still paid for:
+
+```bash
+genviral studio-image-status --image-id IMAGE_ID          # when you still have the id
+genviral request --method GET --path /studio/creations --query kind=image,limit=30 --json
+# → newest first: creation_id, status, url, created_at, prompt_excerpt (match on the prompt)
+```
+
+`limit` is 1 to 48 (49 or more returns `422 invalid_query`). The next CLI release adds
+`list-studio-creations`.
 
 ---
 
@@ -234,14 +276,18 @@ genviral studio-video-status --video-id VIDEO_UUID --poll --poll-interval 10 --p
 # 1. Check available models
 genviral studio-models --mode image
 
-# 2. Generate image
+# 2. Start the image job
 genviral studio-generate-image \
   --model-id "google/nano-banana-2" \
   --prompt "Your prompt" \
-  --aspect-ratio "9:16"
-# → instant output_url
+  --aspect-ratio "9:16" --json
+# → image_id, status "processing", output_url null
 
-# 3. Use in a slideshow or post
+# 3. Poll until ready (repeat every ~5 s)
+genviral studio-image-status --image-id IMAGE_ID --json
+# → output_url when status is "succeeded"
+
+# 4. Use in a slideshow or post
 genviral create-post \
   --caption "Check this out" \
   --media-type slideshow \
@@ -286,11 +332,12 @@ This keeps payloads consistent across models while allowing fine-grained control
 
 | Code | Meaning |
 |------|---------|
+| `400 invalid_request` | e.g. `Idempotency-Key is too long` (max 255) |
 | `401` | Auth failed (missing/invalid/revoked token) |
 | `402 subscription_required` | Active Creator/Professional/Business plan required |
 | `403 tier_not_allowed` | Scheduler tier cannot use Partner API |
-| `403 insufficient_credits` | Not enough credits |
-| `404 video_not_found` | Invalid video ID |
+| `402 insufficient_credits` | Not enough credits |
+| `404 video_not_found` / `image_not_found` | Invalid video or image ID |
 | `422 invalid_payload` | Bad request body or unsupported model_id |
 | `422 model_requires_image` | Model needs an input image |
 | `422 model_input_not_supported` | Input type not supported by model |

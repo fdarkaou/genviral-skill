@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Thin wrapper around the @genviral/cli npm package.
-# Installs: npm install -g @genviral/cli
+# Thin wrapper around the genviral npm package.
+# Installs: npm install -g genviral
 set -euo pipefail
 
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -10,12 +10,11 @@ if ! command -v genviral >/dev/null 2>&1; then
 genviral CLI is not installed.
 
 Install globally:
-  npm install -g @genviral/cli
+  npm install -g genviral
 
 Local install from the monorepo (before npm publish):
-  pnpm --filter @genviral/partner-api-contracts pack --pack-destination /tmp
-  pnpm --filter @genviral/cli pack --pack-destination /tmp
-  npm install -g /tmp/genviral-partner-api-contracts-0.1.0.tgz /tmp/genviral-cli-0.1.0.tgz
+  pnpm --filter genviral pack --pack-destination /tmp
+  npm install -g /tmp/genviral-*.tgz
 EOF
   exit 127
 fi

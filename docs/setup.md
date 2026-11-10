@@ -59,7 +59,7 @@ Now figure out the visual approach.
 **First, install the CLI and set up API access:**
 
 ```bash
-npm install -g @genviral/cli
+npm install -g genviral
 ```
 
 Get the API key from https://www.genviral.io (Settings > API Keys), then:

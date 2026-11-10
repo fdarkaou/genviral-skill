@@ -17,14 +17,19 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import time
 import urllib.request
 from pathlib import Path
 
 # Path to genviral CLI script — resolves to sibling skill
 SKILL_ROOT = Path(__file__).parent.parent.parent.parent  # agent/skills/
-GENVIRAL_SCRIPT = SKILL_ROOT / "genviral" / "scripts" / "genviral"
+GENVIRAL_SCRIPT = SKILL_ROOT / "genviral" / "scripts" / "genviral.sh"
+BROWSER_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+IMAGE_POLL_SECONDS = 5
+IMAGE_POLL_MAX_SECONDS = 300
 
 DEFAULT_MODEL = "google/nano-banana-2"   # default: equal quality to pro, faster + cheaper
 PRO_MODEL = "google/nano-banana-pro"     # higher quality option (2 credits)
@@ -125,11 +130,14 @@ IMAGE_FORMATS = {
 
 def run_genviral_cmd(args_list: list, timeout: int = 120) -> dict:
     """Run a genviral command and return parsed result."""
-    if not GENVIRAL_SCRIPT.exists():
-        return {"ok": False, "error": f"genviral not found at {GENVIRAL_SCRIPT}"}
+    if GENVIRAL_SCRIPT.exists():
+        cmd = ["bash", str(GENVIRAL_SCRIPT)] + args_list
+    elif shutil.which("genviral"):
+        cmd = ["genviral"] + args_list
+    else:
+        return {"ok": False, "error": "genviral CLI not found (npm install -g genviral)"}
 
     env = os.environ.copy()  # inherits GENVIRAL_API_KEY
-    cmd = ["bash", str(GENVIRAL_SCRIPT)] + args_list
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
@@ -139,9 +147,15 @@ def run_genviral_cmd(args_list: list, timeout: int = 120) -> dict:
         if result.returncode == 0 or "OK:" in output:
             # Extract output URL if present
             url_match = re.search(r'https?://\S+\.(?:png|jpg|jpeg|webp)', output)
+            try:
+                data = json.loads(result.stdout)
+            except ValueError:
+                data = {}
             return {
                 "ok": True,
-                "output_url": url_match.group(0) if url_match else None,
+                "output_url": data.get("output_url") or (url_match.group(0) if url_match else None),
+                "image_id": data.get("image_id"),
+                "status": data.get("status"),
                 "raw": output,
             }
         else:
@@ -163,8 +177,10 @@ def download_image(url: str, dest_path: str) -> bool:
         )
         if result.returncode == 0 and Path(dest_path).exists() and Path(dest_path).stat().st_size > 1000:
             return True
-        # Fallback: urllib
-        urllib.request.urlretrieve(url, dest_path)
+        # Fallback: urllib. The CDN returns 403 to urllib's default User-Agent.
+        req = urllib.request.Request(url, headers={"User-Agent": BROWSER_UA})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            Path(dest_path).write_bytes(resp.read())
         return True
     except Exception as e:
         print(f"    ✗ Download failed: {e}", file=sys.stderr)
@@ -225,6 +241,9 @@ def generate_image(prompt: str, output_path: str, model: str,
     ]
 
     result = run_genviral_cmd(cmd_args, timeout=90)
+    # Studio image generation is async: the submit returns image_id with output_url null.
+    if result["ok"] and not result.get("output_url") and result.get("image_id"):
+        result = wait_for_image(result["image_id"])
 
     if result["ok"] and result.get("output_url"):
         # Download to local path
@@ -240,9 +259,24 @@ def generate_image(prompt: str, output_path: str, model: str,
             print(f"      ⚠ Saved URL ref: {ref_path}")
             return True
     else:
-        err = result.get("error", "Unknown error")
+        err = result.get("error") or "Unknown error"
         print(f"      ✗ {Path(output_path).name}: {err[:120]}", file=sys.stderr)
         return False
+
+
+def wait_for_image(image_id: str) -> dict:
+    """Poll studio-image-status until output_url is set. Credits are already spent, so log the id."""
+    print(f"      … image_id {image_id} processing", flush=True)
+    waited = 0
+    while waited <= IMAGE_POLL_MAX_SECONDS:
+        status = run_genviral_cmd(["studio-image-status", "--image-id", image_id, "--json"], timeout=60)
+        if status.get("output_url"):
+            return status
+        if status.get("status") in ("failed", "succeeded"):
+            return {"ok": False, "error": f"image {image_id} ended as {status.get('status')}: {status.get('raw', '')[:200]}"}
+        time.sleep(IMAGE_POLL_SECONDS)
+        waited += IMAGE_POLL_SECONDS
+    return {"ok": False, "error": f"image {image_id} still processing after {IMAGE_POLL_MAX_SECONDS}s; check: genviral studio-image-status --image-id {image_id}"}
 
 
 def load_ad_set_context(ad_set_dir: Path) -> dict:

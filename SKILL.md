@@ -5,7 +5,7 @@ description: Complete genviral Partner API automation. Create and schedule posts
 
 # genviral Partner API Skill
 
-> **TL;DR:** Uses the `@genviral/cli` npm package for 60+ Partner API commands; **[docs.genviral.io](https://docs.genviral.io)** is the canonical REST reference (start with [`llms.txt`](https://docs.genviral.io/llms.txt) and [Create Post](https://docs.genviral.io/api-reference/create-post) for `POST /posts` payload shapes). Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. TikTok copy flow: `copy-tiktok-preview` → `copy-tiktok-import` (with exactly one of `pack_id` or `pack_images`). Studio AI: `studio-models` → `studio-generate-image` (sync) or `studio-generate-video` → `studio-video-status --poll` (async). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Analytics correlation: treat `analyticsId`/`id`, `platformPostId`, and `genviralPostId` as different identifiers; use `genviralPostId` or `externalId` to map analytics rows back to created posts. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
+> **TL;DR:** Uses the `genviral` npm package (formerly `@genviral/cli`, which is outdated) for 60+ Partner API commands; **[docs.genviral.io](https://docs.genviral.io)** is the canonical REST reference (start with [`llms.txt`](https://docs.genviral.io/llms.txt) and [Create Post](https://docs.genviral.io/api-reference/create-post) for `POST /posts` payload shapes). Core flow: `get-pack` → analyze images (metadata + vision) → `generate` with `pinned_images` → `render` → visual review (hard gate) → `create-post` → log to `workspace/performance/log.json`. TikTok copy flow: `copy-tiktok-preview` → `copy-tiktok-import` (with exactly one of `pack_id` or `pack_images`). Studio AI (all async): `studio-models` → `studio-generate-image` → `studio-image-status` until `output_url`, or `studio-generate-video` → `studio-video-status --poll`. Uploads: `upload --idempotency-key <new uuid>` (prepare + PUT + finalize). Folders: `create-folder` → `folder-items-add` to organize files/slideshows. Analytics correlation: treat `analyticsId`/`id`, `platformPostId`, and `genviralPostId` as different identifiers; use `genviralPostId` or `externalId` to map analytics rows back to created posts. Auth via `GENVIRAL_API_KEY`. Config in `defaults.yaml`. Instance data in `workspace/`.
 
 ## What This Skill Does
 
@@ -144,7 +144,7 @@ When the user wants to copy a TikTok slideshow idea but generate new visuals:
 1. Run `copy-tiktok-preview` first and capture `preview_id`, source image URLs, and slide count.
 2. Run `copy-tiktok-import` with exactly one pack source (`pack_id` or `pack_images`) so text overlays are extracted and mapped into editable slides.
 3. Generate replacement images through Studio using `google/nano-banana-2` with each source slide image as reference input:
-   - command: `studio-generate-image --model-id "google/nano-banana-2" --image-urls "<source_url>" --prompt "<product-aware transformation prompt>"`
+   - command: `studio-generate-image --model-id "google/nano-banana-2" --image-urls "<source_url>" --prompt "<product-aware transformation prompt>"`, then poll `studio-image-status --image-id <image_id>` until `output_url` is set (generation is async; credits are charged at submit, so keep every `image_id`)
 4. Build prompts with product context from `workspace/context/product.md` so generated visuals stay relevant to the advertised product.
 5. Replace slide backgrounds with generated URLs (`update --slides-file ...`) while preserving/editing imported text elements.
 6. Render (`render`) and review (`review`) before posting; never skip visual QA.
@@ -198,17 +198,16 @@ These apply regardless of what docs you've loaded:
 Install the Partner API CLI once globally:
 
 ```bash
-npm install -g @genviral/cli
+npm install -g genviral
 ```
 
-The npm package publishes `genviral` and `genviral-cli`. Prefer the `genviral` binary in instructions and automation.
+The `genviral` npm package publishes the `genviral` and `genviral-cli` binaries. Do not install the old `@genviral/cli` package: its 0.1.1 `upload` never finalizes and it treats Studio images as synchronous. Prefer the `genviral` binary in instructions and automation.
 
 Local install from the monorepo (before npm publish):
 
 ```bash
-pnpm --filter @genviral/partner-api-contracts pack --pack-destination /tmp
-pnpm --filter @genviral/cli pack --pack-destination /tmp
-npm install -g /tmp/genviral-partner-api-contracts-0.1.0.tgz /tmp/genviral-cli-0.1.0.tgz
+pnpm --filter genviral pack --pack-destination /tmp
+npm install -g /tmp/genviral-*.tgz
 ```
 
 The skill's `scripts/genviral.sh` is only a convenience wrapper. It forwards to the npm `genviral` binary and sets `GENVIRAL_CONFIG` to this skill's `defaults.yaml` when that variable is not already set. Do not document or depend on it as a separate shell implementation of Partner API commands.

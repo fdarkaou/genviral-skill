@@ -305,6 +305,7 @@ genviral studio-generate-image \
   --model-id "google/nano-banana-2" \
   --image-urls "https://source-slide-url.jpg" \
   --prompt "Keep composition rhythm, but create a new scene aligned with PRODUCT_CONTEXT. Preserve clarity for overlaid text."
+# → image_id (async). Poll: genviral studio-image-status --image-id IMAGE_ID until output_url is set
 ```
 
 Prompt guidance for step 3:

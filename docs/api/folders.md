@@ -153,7 +153,7 @@ genviral create-folder --name "March 2026" --media-type upload --parent-folder-i
 # → returns subfolder ID, e.g. "def-456"
 
 # 2. Upload files and add them to the folder
-genviral upload --file ad-slide-1.jpg --content-type image/jpeg
+genviral upload --file ad-slide-1.jpg --content-type image/jpeg --idempotency-key "$(uuidgen)"
 # → returns file ID, e.g. "file-789"
 
 genviral folder-items-add --id def-456 --item-ids "file-789"

@@ -43,7 +43,7 @@ The skill runs a closed loop:
 
 ```bash
 # Install the npm CLI (once)
-npm install -g @genviral/cli
+npm install -g genviral
 
 # Set your API key
 export GENVIRAL_API_KEY="your_public_id.your_secret"
@@ -84,6 +84,7 @@ genviral studio-generate-image \
   --model-id "google/nano-banana-2" \
   --image-urls "https://source-slide-url.jpg" \
   --prompt "Create a new original ad image inspired by this slide, aligned with PRODUCT_CONTEXT."
+# → image_id (async). Poll: genviral studio-image-status --image-id IMAGE_ID until output_url is set
 
 # Check performance
 genviral analytics-summary --range 30d
@@ -186,7 +187,7 @@ genviral/
 | **Templates** | `list-templates`, `get-template`, `create-template`, `update-template`, `delete-template`, `create-template-from-slideshow` |
 | **Analytics & Trends** | `analytics-summary`, `analytics-posts`, `analytics-targets`, `analytics-target-create`, `analytics-target-refresh`, `analytics-refresh`, `analytics-workspace-suggestions`, `trend-brief` |
 
-The `@genviral/cli` npm package publishes the `genviral` and `genviral-cli` binaries. Use `genviral help` for the full command list.
+The `genviral` npm package publishes the `genviral` and `genviral-cli` binaries. Use `genviral help` for the full command list.
 
 From the skill directory, `./scripts/genviral.sh <command> [options]` is available only as a convenience wrapper. It does not implement commands itself; it forwards to the npm `genviral` binary and points `GENVIRAL_CONFIG` at this skill's `defaults.yaml` when that variable is not already set.
 
@@ -226,7 +227,7 @@ Also available standalone: [fdarkaou/meta-ads-skill](https://github.com/fdarkaou
 ## Links
 
 - [Genviral](https://genviral.io)
-- [Partner API docs](https://docs.genviral.io) — canonical REST reference alongside `@genviral/cli`
+- [Partner API docs](https://docs.genviral.io) — canonical REST reference alongside the `genviral` CLI
 - [llms.txt](https://docs.genviral.io/llms.txt) — full doc index for agents
 - [Create Post](https://docs.genviral.io/api-reference/create-post) — `POST /posts` payload reference
 - [meta-ads-skill](https://github.com/fdarkaou/meta-ads-skill) — standalone repo

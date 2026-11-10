@@ -49,6 +49,7 @@ genviral studio-generate-image \
   --model-id "openai/gpt-image-2" \
   --prompt "The same person holding a coffee cup in a sunny kitchen" \
   --image-urls "https://cdn.example.com/maya.jpg"
+# → image_id (async). Poll: genviral studio-image-status --image-id IMAGE_ID until output_url is set
 ```
 
 Use every URL from `reference_image_urls` when the model accepts multiple
